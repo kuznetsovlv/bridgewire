@@ -1,6 +1,5 @@
 node_modules
 dist
 .env
-npm_recovery_codes.txt
 *.log
 .idea
