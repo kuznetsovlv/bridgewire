@@ -1,6 +1,6 @@
 {
   "name": "bridgewire",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Transport-agnostic client for HTTP and WebSocket communication",
   "keywords": [],
   "author": "Kuznetsov Leonid",
@@ -21,8 +21,12 @@
   ],
   "repository": {
     "type": "git",
-    "directory": "https://github.com/kuznetsovlv/bridgewire"
+    "url": "git+https://github.com/kuznetsovlv/bridgewire.git"
   },
+  "bugs": {
+    "url": "https://github.com/kuznetsovlv/bridgewire/issues"
+  },
+  "homepage": "https://github.com/kuznetsovlv/bridgewire#readme",
   "scripts": {
     "dev": "vite",
     "prebuild": "npm run clean",
