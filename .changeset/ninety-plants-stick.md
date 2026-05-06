@@ -1,5 +1,0 @@
----
-'bridgewire': patch
----
-
-Configured changeset
