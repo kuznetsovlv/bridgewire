@@ -2,7 +2,7 @@
 
 **BridgeWire** is a transport-agnostic client for HTTP and WebSocket communication.
 
-> ⚠️ BridgeWire is currently in early development. The public API is not stable yet.
+> ⚠️ BridgeWire is currently in early development! The public API is not stable yet.
 
 The goal of the project is to provide a unified interface for sending requests over different transports, such as Fetch and WebSocket, with a clean and extensible architecture.
 
