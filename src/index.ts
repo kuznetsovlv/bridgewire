@@ -1,3 +1,5 @@
-const bridgewire = () => 'BridgeWire';
+import BridgeWireBuilder from './BridgeWireBuilder';
 
-export default bridgewire;
+export default function getBridgeWireBuilder(): BridgeWireBuilder {
+    return new BridgeWireBuilder();
+}

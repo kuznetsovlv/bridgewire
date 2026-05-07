@@ -1,64 +1,64 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  checks:
-    name: Release checks
-    runs-on: ubuntu-latest
+    checks:
+        name: Release checks
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-          registry-url: https://registry.npmjs.org
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: npm
+                  registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Run checks
-        run: npm run check
+            - name: Run checks
+              run: npm run check
 
-  release:
-    name: Version or publish package
-    runs-on: ubuntu-latest
-    needs: checks
-    environment: npm
+    release:
+        name: Version or publish package
+        runs-on: ubuntu-latest
+        needs: checks
+        environment: npm
 
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
+        permissions:
+            contents: write
+            pull-requests: write
+            id-token: write
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-          registry-url: https://registry.npmjs.org
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: npm
+                  registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Create release PR or publish
-        uses: changesets/action@v1
-        with:
-          version: npm run version-packages
-          publish: npx changeset publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.CHANGESETS_GITHUB_TOKEN }}
+            - name: Create release PR or publish
+              uses: changesets/action@v1
+              with:
+                  version: npm run version-packages
+                  publish: npx changeset publish
+              env:
+                  GITHUB_TOKEN: ${{ secrets.CHANGESETS_GITHUB_TOKEN }}
