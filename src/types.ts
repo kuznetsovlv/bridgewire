@@ -42,3 +42,54 @@ export type Config = RequiredNullable<
         timeOut: number;
     } & URLData
 >;
+
+export type RequestId = string;
+
+export type UnsubscribeMethod = () => void;
+
+export enum RequestStatus {
+    Pending = 'Pending',
+    Completed = 'Completed',
+    Failed = 'Failed',
+    Aborted = 'Aborted',
+    TimedOut = 'TimedOut',
+}
+
+export interface Request<Data> {
+    readonly id: RequestId;
+    abort(): void;
+    onAbort(callback: () => void): UnsubscribeMethod;
+    get status(): RequestStatus;
+    get data(): Data | null;
+    get error(): Error | null;
+    get result(): Promise<Data>;
+}
+
+export interface RequestOptions {
+    timeout?: number;
+}
+
+export type BridgeWireTransportCallback<T> = (id: RequestId, data: T) => void;
+export type BridgeWireTransportAbortCallback = (id: RequestId) => void;
+
+export enum TransportStatus {
+    Disconnected = 'Disconnected',
+    Connecting = 'Connecting',
+    Connected = 'Connected',
+    Closing = 'Closing',
+    Error = 'Error',
+}
+
+export interface BridgeWireTransport<RequestData, ResponseData> {
+    send(request: RequestData, options?: RequestOptions): Request<ResponseData>;
+    abort(ids?: RequestId | RequestId[]): void;
+    onAbort(callback: BridgeWireTransportAbortCallback): UnsubscribeMethod;
+    onMessage(
+        callback: BridgeWireTransportCallback<ResponseData>
+    ): UnsubscribeMethod;
+    onRequestError(
+        callback: BridgeWireTransportCallback<Error>
+    ): UnsubscribeMethod;
+    onError(callback: (error: Error) => void): UnsubscribeMethod;
+    get status(): TransportStatus;
+}
