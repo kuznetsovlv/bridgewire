@@ -1,4 +1,4 @@
-import {Protocol, TransportType} from '../types';
+import {Protocol, TransportType} from '@/types';
 
 /**
  * Checks whether the selected transport is compatible with the URL protocol.

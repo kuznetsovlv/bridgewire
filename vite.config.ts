@@ -15,6 +15,11 @@ export default defineConfig({
             exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
         }),
     ],
+    resolve: {
+        alias: {
+            '@': resolve(__dirname, './src'),
+        },
+    },
     build: {
         emptyOutDir: true,
         lib: {

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {Protocol, TransportType} from '../types';
+import {Protocol, TransportType} from '@/types';
 import {transportAndProtocolAssert} from './compatibilityAsserts';
 
 describe('compatibility asserts', () => {

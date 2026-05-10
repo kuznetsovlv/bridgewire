@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {Protocol} from '../types';
+import {Protocol} from '@/types';
 import {
     getDefaultHost,
     getDefaultPort,

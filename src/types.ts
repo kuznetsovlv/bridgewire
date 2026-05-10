@@ -46,6 +46,7 @@ export type Config = RequiredNullable<
 export type RequestId = string;
 
 export type UnsubscribeMethod = () => void;
+export type ErrorCallback = (error: Error) => void;
 
 export enum RequestStatus {
     Pending = 'Pending',
@@ -78,18 +79,4 @@ export enum TransportStatus {
     Connected = 'Connected',
     Closing = 'Closing',
     Error = 'Error',
-}
-
-export interface BridgeWireTransport<RequestData, ResponseData> {
-    send(request: RequestData, options?: RequestOptions): Request<ResponseData>;
-    abort(ids?: RequestId | RequestId[]): void;
-    onAbort(callback: BridgeWireTransportAbortCallback): UnsubscribeMethod;
-    onMessage(
-        callback: BridgeWireTransportCallback<ResponseData>
-    ): UnsubscribeMethod;
-    onRequestError(
-        callback: BridgeWireTransportCallback<Error>
-    ): UnsubscribeMethod;
-    onError(callback: (error: Error) => void): UnsubscribeMethod;
-    get status(): TransportStatus;
 }

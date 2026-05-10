@@ -1,6 +1,7 @@
 import {HTTPMethod, Protocol, Query, TransportType} from './types';
 import {transportAndProtocolAssert} from './utils';
-import {parseUrl} from './utils/url';
+import {parseUrl} from '@/utils';
+import BridgeWireTransport from '@/BridgeWireTransport/BridgeWireTransport';
 
 /**
  * Fluent configuration builder for BridgeWire clients.
@@ -20,7 +21,7 @@ import {parseUrl} from './utils/url';
  *   .withMethod(HTTPMethod.GET)
  *   .withHeader('Accept', 'application/json');
  */
-export default class BridgeWireBuilder {
+export default class BridgeWireBuilder<RequestData, ResponseData> {
     #transport?: TransportType;
     #protocol?: Protocol;
     #host?: string;
@@ -40,7 +41,9 @@ export default class BridgeWireBuilder {
      *
      * @throws Error when transport and protocol are incompatible.
      */
-    public withTransport(transport: TransportType): BridgeWireBuilder {
+    public withTransport(
+        transport: TransportType
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         transportAndProtocolAssert(transport, this.#protocol);
         this.#transport = transport;
         return this;
@@ -54,7 +57,9 @@ export default class BridgeWireBuilder {
      *
      * @throws Error when transport and protocol are incompatible.
      */
-    public withProtocol(protocol: Protocol): BridgeWireBuilder {
+    public withProtocol(
+        protocol: Protocol
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         transportAndProtocolAssert(this.#transport, protocol);
         this.#protocol = protocol;
         return this;
@@ -66,7 +71,9 @@ export default class BridgeWireBuilder {
      * The host may include a port if it was parsed from a URL,
      * for example `example.com:3000`.
      */
-    public withHost(host: string): BridgeWireBuilder {
+    public withHost(
+        host: string
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#host = host;
         return this;
     }
@@ -76,7 +83,9 @@ export default class BridgeWireBuilder {
      *
      * Expected to be normalized with a leading slash, for example `/api/users`.
      */
-    public withPath(path: string): BridgeWireBuilder {
+    public withPath(
+        path: string
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#path = path;
         return this;
     }
@@ -84,7 +93,9 @@ export default class BridgeWireBuilder {
     /**
      * Sets the request port.
      */
-    public withPort(port: number): BridgeWireBuilder {
+    public withPort(
+        port: number
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#port = port;
         return this;
     }
@@ -94,7 +105,9 @@ export default class BridgeWireBuilder {
      *
      * Expected format follows the URL API output, for example `#section`.
      */
-    public withHash(hash: string): BridgeWireBuilder {
+    public withHash(
+        hash: string
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#hash = hash;
         return this;
     }
@@ -104,7 +117,9 @@ export default class BridgeWireBuilder {
      *
      * Replaces the current query object.
      */
-    public withQuery(query: Query): BridgeWireBuilder {
+    public withQuery(
+        query: Query
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#query = query;
         return this;
     }
@@ -120,7 +135,7 @@ export default class BridgeWireBuilder {
      *
      * @throws Error when parsed protocol is incompatible with selected transport.
      */
-    public withUrl(url: string): BridgeWireBuilder {
+    public withUrl(url: string): BridgeWireBuilder<RequestData, ResponseData> {
         const {port, protocol, path, hash, host, query} = parseUrl(url);
 
         if (protocol) {
@@ -149,7 +164,9 @@ export default class BridgeWireBuilder {
     /**
      * Sets the default HTTP method for Fetch-based requests.
      */
-    public withMethod(method: HTTPMethod): BridgeWireBuilder {
+    public withMethod(
+        method: HTTPMethod
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#method = method;
         return this;
     }
@@ -159,7 +176,9 @@ export default class BridgeWireBuilder {
      *
      * Later values overwrite earlier values with the same header name.
      */
-    public withHeaders(headers: HeadersInit): BridgeWireBuilder {
+    public withHeaders(
+        headers: HeadersInit
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#headers = this.#headers
             ? {...this.#headers, ...headers}
             : {...headers};
@@ -172,7 +191,7 @@ export default class BridgeWireBuilder {
     public withHeader(
         headerName: string,
         headerValue: string
-    ): BridgeWireBuilder {
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#headers = this.#headers
             ? {...this.#headers, [headerName]: headerValue}
             : {[headerName]: headerValue};
@@ -183,8 +202,12 @@ export default class BridgeWireBuilder {
     /**
      * Sets the default request timeout in milliseconds.
      */
-    public withTimeOut(timeOut: number): BridgeWireBuilder {
+    public withTimeOut(
+        timeOut: number
+    ): BridgeWireBuilder<RequestData, ResponseData> {
         this.#timeOut = timeOut;
         return this;
     }
+
+    // public build(): BridgeWireTransport<RequestData, ResponseData> {}
 }
