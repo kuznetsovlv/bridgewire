@@ -133,11 +133,10 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
     /**
      * Sends request data through the concrete transport implementation.
      *
-     * Concrete transport classes decide how the request is delivered, for example
-     * over HTTP, WebSocket, or another communication layer.
-     *
-     * The returned request object can be used to track request status, await the
-     * response result, and abort the request.
+     * Implementations are responsible for creating a request object, storing it in
+     * the active request collection when needed, delivering the request payload,
+     * and resolving or rejecting the request result according to the transport
+     * response.
      *
      * @param request - Request payload to send.
      * @param options - Optional request options, such as timeout.
