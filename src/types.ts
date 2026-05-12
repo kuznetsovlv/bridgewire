@@ -60,6 +60,8 @@ export interface Request<Data> {
     readonly id: RequestId;
     abort(): void;
     onAbort(callback: () => void): UnsubscribeMethod;
+    onMessage(callback: (data: Data) => void): UnsubscribeMethod;
+    onError(callback: (error: Error) => void): UnsubscribeMethod;
     get status(): RequestStatus;
     get data(): Data | null;
     get error(): Error | null;

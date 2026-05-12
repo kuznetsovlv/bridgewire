@@ -20,16 +20,13 @@ import {subscribe} from '@/utils';
  * behavior, for example over HTTP, WebSocket, or another communication layer.
  */
 export default abstract class BridgeWireTransport<RequestData, ResponseData> {
-    readonly #abortCallbacks: Set<BridgeWireTransportAbortCallback> = new Set();
-    readonly #messageCallbacks: Set<BridgeWireTransportCallback<ResponseData>> =
-        new Set();
-    readonly #requestErrorCallbacks: Set<BridgeWireTransportCallback<Error>> =
-        new Set();
-    readonly #errorCallbacks: Set<ErrorCallback> = new Set();
+    readonly #abortCallbacks: Set<BridgeWireTransportAbortCallback>;
+    readonly #messageCallbacks: Set<BridgeWireTransportCallback<ResponseData>>;
+    readonly #requestErrorCallbacks: Set<BridgeWireTransportCallback<Error>>;
+    readonly #errorCallbacks: Set<ErrorCallback>;
 
     protected _status: TransportStatus;
-
-    protected _requests: Map<RequestId, Request<ResponseData>> = new Map();
+    protected _requests: Map<RequestId, Request<ResponseData>>;
 
     /**
      * Aborts a single active request by id.
@@ -50,7 +47,34 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
     }
 
     constructor(status: TransportStatus) {
+        this.#abortCallbacks = new Set();
+        this.#messageCallbacks = new Set();
+        this.#requestErrorCallbacks = new Set();
+        this.#errorCallbacks = new Set();
+
         this._status = status;
+        this._requests = new Map();
+    }
+
+    protected _registerRequest(request: Request<ResponseData>): void {
+        this._requests.set(request.id, request);
+
+        request.onAbort(() => {
+            this._requests.delete(request.id);
+            this.#abortCallbacks.forEach((callback) => callback(request.id));
+        });
+
+        request.onMessage?.((data) => {
+            this.#messageCallbacks.forEach((callback) => {
+                callback(request.id, data);
+            });
+        });
+
+        request.onError?.((error) => {
+            this.#requestErrorCallbacks.forEach((callback) => {
+                callback(request.id, error);
+            });
+        });
     }
 
     /**
