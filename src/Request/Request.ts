@@ -31,7 +31,11 @@ export default abstract class Request<Data> {
      * @param status - Initial request status.
      * @param result - Promise that resolves or rejects with the request result.
      */
-    constructor(id: RequestId, status: RequestStatus, result: Promise<Data>) {
+    protected constructor(
+        id: RequestId,
+        status: RequestStatus,
+        result: Promise<Data>
+    ) {
         this.#id = id;
 
         this._status = status;

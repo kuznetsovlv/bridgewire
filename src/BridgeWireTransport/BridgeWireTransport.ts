@@ -48,7 +48,7 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
         }
     }
 
-    constructor(status: TransportStatus) {
+    protected constructor(status: TransportStatus) {
         this.#abortCallbacks = new Set();
         this.#messageCallbacks = new Set();
         this.#requestErrorCallbacks = new Set();
