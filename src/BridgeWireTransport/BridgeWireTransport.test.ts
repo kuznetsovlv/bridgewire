@@ -1,7 +1,8 @@
 import {describe, expect, it, vi} from 'vitest';
 import BridgeWireTransport from './BridgeWireTransport';
-import type {RequestId, Request} from '@/types';
+import type {RequestId} from '@/types';
 import {TransportStatus} from '@/types';
+import {Request} from '@/Request';
 
 class TestTransport extends BridgeWireTransport<string, string> {
     public addRequest(id: RequestId, request: Request<string>): void {
