@@ -31,8 +31,11 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
     /**
      * Aborts a single active request by id.
      *
-     * If the request exists, it is aborted, removed from the active request
-     * collection, and all abort subscribers are notified with the request id.
+     * If the request exists, the transport calls the request's own `abort` method
+     * and removes the request from the active request collection.
+     *
+     * Abort subscribers are notified by the request-level abort event bridge
+     * registered in `_registerRequest`, not directly by this method.
      *
      * If the request does not exist, the method does nothing.
      *
@@ -42,7 +45,6 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
         if (this._requests.has(id)) {
             this._requests.get(id)?.abort();
             this._requests.delete(id);
-            this.#abortCallbacks.forEach((callback) => callback(id));
         }
     }
 
@@ -56,6 +58,19 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
         this._requests = new Map();
     }
 
+    /**
+     * Registers a request in the active request collection and connects its
+     * request-level events to transport-level subscribers.
+     *
+     * The request remains the source of request-level events. The transport only
+     * forwards those events to its own subscribers and removes the request from the
+     * active collection when it is aborted.
+     *
+     * Concrete transport implementations should call this method after creating a
+     * request object.
+     *
+     * @param request - Request object created by a concrete transport implementation.
+     */
     protected _registerRequest(request: Request<ResponseData>): void {
         this._requests.set(request.id, request);
 
@@ -157,10 +172,9 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
     /**
      * Sends request data through the concrete transport implementation.
      *
-     * Implementations are responsible for creating a request object, storing it in
-     * the active request collection when needed, delivering the request payload,
-     * and resolving or rejecting the request result according to the transport
-     * response.
+     * Implementations are responsible for creating a request object, registering it
+     * with `_registerRequest`, delivering the request payload, and resolving or
+     * rejecting the request result according to the transport response.
      *
      * @param request - Request payload to send.
      * @param options - Optional request options, such as timeout.
