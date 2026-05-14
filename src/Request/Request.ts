@@ -5,47 +5,84 @@ import {subscribe} from '@/utils';
 /**
  * Base request implementation for BridgeWire transports.
  *
- * Stores request state, result promise, response data, error information, and
+ * Stores request state, latest response data, latest error information, and
  * request-level event subscriptions.
  *
  * Concrete request implementations are responsible for implementing the actual
- * abort behavior and for updating protected state fields when the request is
- * completed, failed, aborted, or receives response data.
+ * abort behavior and for updating request status according to their own
+ * lifecycle rules.
  */
 export default abstract class Request<Data> {
     readonly #id: RequestId;
 
+    readonly #abortCallbacks: Set<() => void>;
+    readonly #messageCallbacks: Set<(data: Data) => void>;
+    readonly #errorCallbacks: Set<(error: Error) => void>;
+
     protected _status: RequestStatus;
     protected _data: Data | null;
     protected _error: Error | null;
-    protected _result: Promise<Data>;
-
-    protected _abortCallbacks: Set<() => void>;
-    protected _messageCallbacks: Set<(data: Data) => void>;
-    protected _errorCallbacks: Set<(error: Error) => void>;
 
     /**
      * Creates a request instance.
      *
      * @param id - Unique request id.
      * @param status - Initial request status.
-     * @param result - Promise that resolves or rejects with the request result.
      */
-    protected constructor(
-        id: RequestId,
-        status: RequestStatus,
-        result: Promise<Data>
-    ) {
+    protected constructor(id: RequestId, status: RequestStatus) {
         this.#id = id;
+        this.#abortCallbacks = new Set();
+        this.#messageCallbacks = new Set();
+        this.#errorCallbacks = new Set();
 
         this._status = status;
         this._data = null;
         this._error = null;
-        this._result = result;
+    }
 
-        this._abortCallbacks = new Set();
-        this._messageCallbacks = new Set();
-        this._errorCallbacks = new Set();
+    /**
+     * Stores received data as the latest request data and notifies message
+     * subscribers.
+     *
+     * This method does not change request status. Concrete implementations should
+     * update status explicitly according to their own lifecycle rules.
+     *
+     * @param data - Received response data.
+     */
+    protected _emitMessage(data: Data): void {
+        this._data = data;
+
+        this.#messageCallbacks.forEach((callback) => {
+            callback(data);
+        });
+    }
+
+    /**
+     * Stores an error as the latest request error and notifies error subscribers.
+     *
+     * This method does not change request status. Concrete implementations should
+     * update status explicitly according to their own lifecycle rules.
+     *
+     * @param error - Request error.
+     */
+    protected _emitError(error: Error): void {
+        this._error = error;
+
+        this.#errorCallbacks.forEach((callback) => {
+            callback(error);
+        });
+    }
+
+    /**
+     * Notifies abort subscribers.
+     *
+     * This method does not change request status. Concrete implementations should
+     * update status explicitly before or after calling this method.
+     */
+    protected _emitAbort(): void {
+        this.#abortCallbacks.forEach((callback) => {
+            callback();
+        });
     }
 
     /**
@@ -82,18 +119,6 @@ export default abstract class Request<Data> {
     }
 
     /**
-     * Promise representing the request result.
-     *
-     * The promise is created by a concrete request or transport implementation
-     * and can be used by consumers to await the final response.
-     *
-     * @returns Promise that resolves with response data or rejects with an error.
-     */
-    public result(): Promise<Data> {
-        return this._result;
-    }
-
-    /**
      * Subscribes to request abort events.
      *
      * The callback is called when this request is aborted.
@@ -102,7 +127,7 @@ export default abstract class Request<Data> {
      * @returns Function that removes the callback from the listener collection.
      */
     public onAbort(callback: () => void): UnsubscribeMethod {
-        return subscribe(callback, this._abortCallbacks);
+        return subscribe(callback, this.#abortCallbacks);
     }
 
     /**
@@ -114,7 +139,7 @@ export default abstract class Request<Data> {
      * @returns Function that removes the callback from the listener collection.
      */
     public onMessage(callback: (data: Data) => void): UnsubscribeMethod {
-        return subscribe(callback, this._messageCallbacks);
+        return subscribe(callback, this.#messageCallbacks);
     }
 
     /**
@@ -126,7 +151,7 @@ export default abstract class Request<Data> {
      * @returns Function that removes the callback from the listener collection.
      */
     public onError(callback: (error: Error) => void): UnsubscribeMethod {
-        return subscribe(callback, this._errorCallbacks);
+        return subscribe(callback, this.#errorCallbacks);
     }
 
     /**
@@ -136,8 +161,8 @@ export default abstract class Request<Data> {
      * for example by aborting an HTTP request, closing a pending operation, or
      * notifying a transport layer.
      *
-     * Implementations should update the request status and notify abort
-     * subscribers through `_abortCallbacks`.
+     * Implementations should update request status according to their own lifecycle
+     * rules and call `_emitAbort` to notify abort subscribers.
      */
     public abstract abort(): void;
 }

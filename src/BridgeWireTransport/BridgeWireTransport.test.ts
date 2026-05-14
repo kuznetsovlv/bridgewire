@@ -5,6 +5,10 @@ import {TransportStatus} from '@/types';
 import {Request} from '@/Request';
 
 class TestTransport extends BridgeWireTransport<string, string> {
+    constructor(status: TransportStatus) {
+        super(status);
+    }
+
     public addRequest(id: RequestId, request: Request<string>): void {
         this._requests.set(id, request);
     }
