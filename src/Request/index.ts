@@ -1,3 +1,4 @@
 import Request from './Request';
+import FetchRequest, {type FetchData} from '@/Request/FetchRequest';
 
-export {Request};
+export {Request, FetchRequest, FetchData};

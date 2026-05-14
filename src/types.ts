@@ -70,3 +70,30 @@ export enum TransportStatus {
     Closing = 'Closing',
     Error = 'Error',
 }
+
+export enum FetchMode {
+    CORS = 'cors',
+    SAME_ORIGIN = 'same-origin',
+    NO_CORS = 'no-cors',
+}
+
+export enum FetchCredentials {
+    SAME_ORIGIN = 'same-origin',
+    INCLUDE = 'include',
+    OMIT = 'omit',
+}
+
+export enum FetchCache {
+    DEFAULT = 'default',
+    NO_STORE = 'no-store',
+    RELOAD = 'reload',
+    NO_CACHE = 'no-cache',
+    FORCE_CACHE = 'force-cache',
+    ONLY_IF_CACHED = 'only-if-cached',
+}
+
+export enum FetchRedirect {
+    FOLLOW = 'follow',
+    ERROR = 'error',
+    MANUAL = 'manual',
+}

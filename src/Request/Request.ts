@@ -1,5 +1,4 @@
-import type {UnsubscribeMethod, RequestId} from '@/types';
-import {RequestStatus} from '@/types';
+import {RequestId, RequestStatus, UnsubscribeMethod} from '@/types';
 import {subscribe} from '@/utils';
 
 /**
@@ -18,10 +17,10 @@ export default abstract class Request<Data> {
     readonly #abortCallbacks: Set<() => void>;
     readonly #messageCallbacks: Set<(data: Data) => void>;
     readonly #errorCallbacks: Set<(error: Error) => void>;
+    #data: Data | null;
+    #error: Error | null;
 
     protected _status: RequestStatus;
-    protected _data: Data | null;
-    protected _error: Error | null;
 
     /**
      * Creates a request instance.
@@ -34,40 +33,33 @@ export default abstract class Request<Data> {
         this.#abortCallbacks = new Set();
         this.#messageCallbacks = new Set();
         this.#errorCallbacks = new Set();
+        this.#data = null;
+        this.#error = null;
 
         this._status = status;
-        this._data = null;
-        this._error = null;
     }
 
     /**
-     * Stores received data as the latest request data and notifies message
-     * subscribers.
+     * Notifies message subscribers.
      *
-     * This method does not change request status. Concrete implementations should
-     * update status explicitly according to their own lifecycle rules.
+     * This method does not store data or change request status.
      *
      * @param data - Received response data.
      */
-    protected _emitMessage(data: Data): void {
-        this._data = data;
-
+    #emitMessage(data: Data): void {
         this.#messageCallbacks.forEach((callback) => {
             callback(data);
         });
     }
 
     /**
-     * Stores an error as the latest request error and notifies error subscribers.
+     * Notifies error subscribers.
      *
-     * This method does not change request status. Concrete implementations should
-     * update status explicitly according to their own lifecycle rules.
+     * This method does not store error information or change request status.
      *
      * @param error - Request error.
      */
-    protected _emitError(error: Error): void {
-        this._error = error;
-
+    #emitError(error: Error): void {
         this.#errorCallbacks.forEach((callback) => {
             callback(error);
         });
@@ -79,10 +71,45 @@ export default abstract class Request<Data> {
      * This method does not change request status. Concrete implementations should
      * update status explicitly before or after calling this method.
      */
-    protected _emitAbort(): void {
+    #emitAbort(): void {
         this.#abortCallbacks.forEach((callback) => {
             callback();
         });
+    }
+
+    /**
+     * Stores received data, updates request status, and notifies message subscribers.
+     *
+     * Concrete implementations should call this method when the request receives
+     * response data or completes with response data.
+     *
+     * @param data - Received response data.
+     * @param status - New request status.
+     */
+    protected _processData(data: Data, status: RequestStatus): void {
+        this.#data = data;
+        this._status = status;
+        this.#emitMessage(data);
+    }
+
+    /**
+     * Stores the latest request error, marks the request as failed, and notifies
+     * error subscribers.
+     *
+     * @param error - Request error.
+     */
+    protected _processError(error: Error): void {
+        this.#error = error;
+        this._status = RequestStatus.Failed;
+        this.#emitError(error);
+    }
+
+    /**
+     * Marks the request as aborted and notifies abort subscribers.
+     */
+    protected _processAbort(): void {
+        this._status = RequestStatus.Aborted;
+        this.#emitAbort();
     }
 
     /**
@@ -100,13 +127,12 @@ export default abstract class Request<Data> {
     }
 
     /**
-     * Last successfully received request data.
+     * Latest data received by the request.
      *
-     * Returns `null` when the request has not received data yet or when the
-     * request failed before producing data.
+     * Returns `null` when the request has not received data yet.
      */
     public get data(): Data | null {
-        return this._data;
+        return this.#data;
     }
 
     /**
@@ -115,7 +141,7 @@ export default abstract class Request<Data> {
      * Returns `null` when the request has not failed.
      */
     public get error(): Error | null {
-        return this._error;
+        return this.#error;
     }
 
     /**
@@ -161,8 +187,8 @@ export default abstract class Request<Data> {
      * for example by aborting an HTTP request, closing a pending operation, or
      * notifying a transport layer.
      *
-     * Implementations should update request status according to their own lifecycle
-     * rules and call `_emitAbort` to notify abort subscribers.
+     * Implementations should call `_processAbort` when the request is considered
+     * aborted.
      */
     public abstract abort(): void;
 }
