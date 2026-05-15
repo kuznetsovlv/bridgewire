@@ -105,6 +105,20 @@ export default abstract class Request<Data> {
     }
 
     /**
+     * Stores timeout error, marks the request as timed out, and notifies error
+     * subscribers.
+     *
+     * @param timeout - Timeout duration in milliseconds.
+     */
+    protected _processTimeout(timeout: number): void {
+        const error = new Error(`Request timed out after ${timeout}ms`);
+
+        this.#error = error;
+        this._status = RequestStatus.TimedOut;
+        this.#emitError(error);
+    }
+
+    /**
      * Marks the request as aborted and notifies abort subscribers.
      */
     protected _processAbort(): void {
@@ -136,9 +150,9 @@ export default abstract class Request<Data> {
     }
 
     /**
-     * Last request error.
+     * Latest request error.
      *
-     * Returns `null` when the request has not failed.
+     * Returns `null` when the request has not produced an error.
      */
     public get error(): Error | null {
         return this.#error;
@@ -171,7 +185,7 @@ export default abstract class Request<Data> {
     /**
      * Subscribes to request error events.
      *
-     * The callback is called when this request fails with an error.
+     * The callback is called when this request fails or times out.
      *
      * @param callback - Callback called with the request error.
      * @returns Function that removes the callback from the listener collection.

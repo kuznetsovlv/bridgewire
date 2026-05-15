@@ -16,6 +16,10 @@ class TestRequest<Data> extends Request<Data> {
         this._processError(error);
     }
 
+    public timeout(timeout: number): void {
+        this._processTimeout(timeout);
+    }
+
     public abort(): void {
         this._processAbort();
     }
@@ -237,6 +241,93 @@ describe('Request', () => {
         expect(request.status).toBe(RequestStatus.Failed);
     });
 
+    it('stores timeout error and marks request as timed out', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.timeout(1000);
+
+        expect(request.error).toEqual(
+            new Error('Request timed out after 1000ms')
+        );
+        expect(request.status).toBe(RequestStatus.TimedOut);
+    });
+
+    it('does not clear previously received data when request times out', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.processData('response-data', RequestStatus.Pending);
+        request.timeout(1000);
+
+        expect(request.data).toBe('response-data');
+        expect(request.error).toEqual(
+            new Error('Request timed out after 1000ms')
+        );
+        expect(request.status).toBe(RequestStatus.TimedOut);
+    });
+
+    it('emits error events when processing timeout', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        request.onError(callback);
+        request.timeout(1000);
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(
+            new Error('Request timed out after 1000ms')
+        );
+    });
+
+    it('notifies multiple error subscribers when request times out', () => {
+        const request = new TestRequest<string>('request-1');
+        const firstCallback = vi.fn();
+        const secondCallback = vi.fn();
+
+        request.onError(firstCallback);
+        request.onError(secondCallback);
+
+        request.timeout(1000);
+
+        expect(firstCallback).toHaveBeenCalledTimes(1);
+        expect(firstCallback).toHaveBeenCalledWith(
+            new Error('Request timed out after 1000ms')
+        );
+
+        expect(secondCallback).toHaveBeenCalledTimes(1);
+        expect(secondCallback).toHaveBeenCalledWith(
+            new Error('Request timed out after 1000ms')
+        );
+    });
+
+    it('allows error subscribers to unsubscribe before timeout', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        const unsubscribe = request.onError(callback);
+
+        unsubscribe();
+        request.timeout(1000);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(request.error).toEqual(
+            new Error('Request timed out after 1000ms')
+        );
+        expect(request.status).toBe(RequestStatus.TimedOut);
+    });
+
+    it('stores timeout error as the latest error', () => {
+        const request = new TestRequest<string>('request-1');
+        const error = new Error('Request failed');
+
+        request.fail(error);
+        request.timeout(1000);
+
+        expect(request.error).toEqual(
+            new Error('Request timed out after 1000ms')
+        );
+        expect(request.status).toBe(RequestStatus.TimedOut);
+    });
+
     it('marks request as aborted', () => {
         const request = new TestRequest<string>('request-1');
 
@@ -321,6 +412,16 @@ describe('Request', () => {
         expect(messageCallback).not.toHaveBeenCalled();
     });
 
+    it('does not call message subscribers when request times out', () => {
+        const request = new TestRequest<string>('request-1');
+        const messageCallback = vi.fn();
+
+        request.onMessage(messageCallback);
+        request.timeout(1000);
+
+        expect(messageCallback).not.toHaveBeenCalled();
+    });
+
     it('does not call message subscribers when request is aborted', () => {
         const request = new TestRequest<string>('request-1');
         const messageCallback = vi.fn();
@@ -358,6 +459,16 @@ describe('Request', () => {
 
         request.onAbort(abortCallback);
         request.fail(error);
+
+        expect(abortCallback).not.toHaveBeenCalled();
+    });
+
+    it('does not call abort subscribers when request times out', () => {
+        const request = new TestRequest<string>('request-1');
+        const abortCallback = vi.fn();
+
+        request.onAbort(abortCallback);
+        request.timeout(1000);
 
         expect(abortCallback).not.toHaveBeenCalled();
     });
