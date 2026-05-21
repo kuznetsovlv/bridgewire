@@ -16,8 +16,16 @@ class TestRequest<Data> extends Request<Data> {
         this._processError(error);
     }
 
+    public nonTerminalError(error: Error): void {
+        this._processError(error, false);
+    }
+
     public timeout(timeout: number): void {
         this._processTimeout(timeout);
+    }
+
+    public complete(): void {
+        this._processComplete();
     }
 
     public abort(): void {
@@ -49,6 +57,21 @@ describe('Request', () => {
         expect(request.error).toBeNull();
     });
 
+    it('is not settled by default', () => {
+        const request = new TestRequest<string>('request-1');
+
+        expect(request.settled).toBe(false);
+    });
+
+    it('is settled when created with terminal status', () => {
+        const request = new TestRequest<string>(
+            'request-1',
+            RequestStatus.Completed
+        );
+
+        expect(request.settled).toBe(true);
+    });
+
     it('stores received data and updates request status', () => {
         const request = new TestRequest<string>('request-1');
 
@@ -75,6 +98,7 @@ describe('Request', () => {
 
         expect(request.data).toBe('partial-data');
         expect(request.status).toBe(RequestStatus.Pending);
+        expect(request.settled).toBe(false);
     });
 
     it('emits message events when processing data', () => {
@@ -134,14 +158,78 @@ describe('Request', () => {
         expect(secondCallback).toHaveBeenCalledWith('response-data');
     });
 
-    it('stores the latest received data', () => {
+    it('stores the latest received data before request is settled', () => {
         const request = new TestRequest<string>('request-1');
 
         request.processData('first-data', RequestStatus.Pending);
-        request.processData('second-data', RequestStatus.Completed);
+        request.processData('second-data', RequestStatus.Pending);
 
         expect(request.data).toBe('second-data');
+        expect(request.status).toBe(RequestStatus.Pending);
+    });
+
+    it('marks request as settled when completed with data', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.processData('response-data', RequestStatus.Completed);
+
+        expect(request.settled).toBe(true);
         expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('emits settled event when completed with data', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        request.onSettled(callback);
+        request.processData('response-data', RequestStatus.Completed);
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(RequestStatus.Completed, null);
+    });
+
+    it('does not emit settled event for non-terminal data', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        request.onSettled(callback);
+        request.processData('response-data', RequestStatus.Pending);
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(request.settled).toBe(false);
+    });
+
+    it('allows settled subscribers to unsubscribe', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        const unsubscribe = request.onSettled(callback);
+
+        unsubscribe();
+        request.complete();
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('keeps other settled subscribers after one subscriber unsubscribes', () => {
+        const request = new TestRequest<string>('request-1');
+        const firstCallback = vi.fn();
+        const secondCallback = vi.fn();
+
+        const unsubscribeFirst = request.onSettled(firstCallback);
+        request.onSettled(secondCallback);
+
+        unsubscribeFirst();
+        request.complete();
+
+        expect(firstCallback).not.toHaveBeenCalled();
+
+        expect(secondCallback).toHaveBeenCalledTimes(1);
+        expect(secondCallback).toHaveBeenCalledWith(
+            RequestStatus.Completed,
+            null
+        );
     });
 
     it('stores request error and marks request as failed', () => {
@@ -152,6 +240,7 @@ describe('Request', () => {
 
         expect(request.error).toBe(error);
         expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.settled).toBe(true);
     });
 
     it('does not clear previously received data when request fails', () => {
@@ -176,6 +265,18 @@ describe('Request', () => {
 
         expect(callback).toHaveBeenCalledTimes(1);
         expect(callback).toHaveBeenCalledWith(error);
+    });
+
+    it('emits settled event when request fails', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+        const error = new Error('Request failed');
+
+        request.onSettled(callback);
+        request.fail(error);
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(RequestStatus.Failed, error);
     });
 
     it('notifies multiple error subscribers', () => {
@@ -229,16 +330,50 @@ describe('Request', () => {
         expect(secondCallback).toHaveBeenCalledWith(error);
     });
 
-    it('stores the latest error', () => {
+    it('supports non-terminal errors', () => {
+        const request = new TestRequest<string>('request-1');
+        const errorCallback = vi.fn();
+        const settledCallback = vi.fn();
+        const error = new Error('Parser failed');
+
+        request.onError(errorCallback);
+        request.onSettled(settledCallback);
+
+        request.nonTerminalError(error);
+
+        expect(request.error).toBe(error);
+        expect(request.status).toBe(RequestStatus.Pending);
+        expect(request.settled).toBe(false);
+
+        expect(errorCallback).toHaveBeenCalledTimes(1);
+        expect(errorCallback).toHaveBeenCalledWith(error);
+        expect(settledCallback).not.toHaveBeenCalled();
+    });
+
+    it('continues receiving data after non-terminal error', () => {
+        const request = new TestRequest<string>('request-1');
+        const error = new Error('Parser failed');
+
+        request.nonTerminalError(error);
+        request.processData('response-data', RequestStatus.Pending);
+
+        expect(request.data).toBe('response-data');
+        expect(request.error).toBe(error);
+        expect(request.status).toBe(RequestStatus.Pending);
+        expect(request.settled).toBe(false);
+    });
+
+    it('stores latest non-terminal error before request is settled', () => {
         const request = new TestRequest<string>('request-1');
         const firstError = new Error('First error');
         const secondError = new Error('Second error');
 
-        request.fail(firstError);
-        request.fail(secondError);
+        request.nonTerminalError(firstError);
+        request.nonTerminalError(secondError);
 
         expect(request.error).toBe(secondError);
-        expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.status).toBe(RequestStatus.Pending);
+        expect(request.settled).toBe(false);
     });
 
     it('stores timeout error and marks request as timed out', () => {
@@ -250,6 +385,7 @@ describe('Request', () => {
             new Error('Request timed out after 1000ms')
         );
         expect(request.status).toBe(RequestStatus.TimedOut);
+        expect(request.settled).toBe(true);
     });
 
     it('does not clear previously received data when request times out', () => {
@@ -274,6 +410,20 @@ describe('Request', () => {
 
         expect(callback).toHaveBeenCalledTimes(1);
         expect(callback).toHaveBeenCalledWith(
+            new Error('Request timed out after 1000ms')
+        );
+    });
+
+    it('emits settled event when request times out', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        request.onSettled(callback);
+        request.timeout(1000);
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(
+            RequestStatus.TimedOut,
             new Error('Request timed out after 1000ms')
         );
     });
@@ -315,33 +465,21 @@ describe('Request', () => {
         expect(request.status).toBe(RequestStatus.TimedOut);
     });
 
-    it('stores timeout error as the latest error', () => {
-        const request = new TestRequest<string>('request-1');
-        const error = new Error('Request failed');
-
-        request.fail(error);
-        request.timeout(1000);
-
-        expect(request.error).toEqual(
-            new Error('Request timed out after 1000ms')
-        );
-        expect(request.status).toBe(RequestStatus.TimedOut);
-    });
-
     it('marks request as aborted', () => {
         const request = new TestRequest<string>('request-1');
 
         request.abort();
 
         expect(request.status).toBe(RequestStatus.Aborted);
+        expect(request.settled).toBe(true);
     });
 
     it('does not clear data or error when request is aborted', () => {
         const request = new TestRequest<string>('request-1');
-        const error = new Error('Request failed');
+        const error = new Error('Parser failed');
 
         request.processData('response-data', RequestStatus.Pending);
-        request.fail(error);
+        request.nonTerminalError(error);
         request.abort();
 
         expect(request.data).toBe('response-data');
@@ -357,6 +495,17 @@ describe('Request', () => {
         request.abort();
 
         expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('emits settled event when request is aborted', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        request.onSettled(callback);
+        request.abort();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(RequestStatus.Aborted, null);
     });
 
     it('notifies multiple abort subscribers', () => {
@@ -399,6 +548,28 @@ describe('Request', () => {
 
         expect(firstCallback).not.toHaveBeenCalled();
         expect(secondCallback).toHaveBeenCalledTimes(1);
+    });
+
+    it('marks request as completed without data', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.complete();
+
+        expect(request.status).toBe(RequestStatus.Completed);
+        expect(request.settled).toBe(true);
+        expect(request.data).toBeNull();
+        expect(request.error).toBeNull();
+    });
+
+    it('emits settled event when request completes without data', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+
+        request.onSettled(callback);
+        request.complete();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(RequestStatus.Completed, null);
     });
 
     it('does not call message subscribers when request fails', () => {
@@ -481,5 +652,72 @@ describe('Request', () => {
         request.abort();
 
         expect(errorCallback).not.toHaveBeenCalled();
+    });
+
+    it('ignores data after request is settled', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.complete();
+        request.processData('late-data', RequestStatus.Pending);
+
+        expect(request.data).toBeNull();
+        expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('ignores terminal error after request is settled', () => {
+        const request = new TestRequest<string>('request-1');
+        const error = new Error('Request failed');
+
+        request.complete();
+        request.fail(error);
+
+        expect(request.error).toBeNull();
+        expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('ignores non-terminal error after request is settled', () => {
+        const request = new TestRequest<string>('request-1');
+        const error = new Error('Parser failed');
+
+        request.complete();
+        request.nonTerminalError(error);
+
+        expect(request.error).toBeNull();
+        expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('ignores timeout after request is settled', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.complete();
+        request.timeout(1000);
+
+        expect(request.error).toBeNull();
+        expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('ignores abort after request is settled', () => {
+        const request = new TestRequest<string>('request-1');
+
+        request.complete();
+        request.abort();
+
+        expect(request.status).toBe(RequestStatus.Completed);
+    });
+
+    it('does not emit settled event more than once', () => {
+        const request = new TestRequest<string>('request-1');
+        const callback = vi.fn();
+        const error = new Error('Request failed');
+
+        request.onSettled(callback);
+
+        request.complete();
+        request.fail(error);
+        request.abort();
+        request.timeout(1000);
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith(RequestStatus.Completed, null);
     });
 });

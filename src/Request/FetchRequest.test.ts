@@ -161,6 +161,7 @@ describe('FetchRequest', () => {
 
         expect(request.id).toBe('request-1');
         expect(request.status).toBe(RequestStatus.Pending);
+        expect(request.settled).toBe(false);
         expect(request.data).toBeNull();
         expect(request.error).toBeNull();
     });
@@ -177,6 +178,7 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.Completed);
+        expect(request.settled).toBe(true);
         expect(request.data).toEqual({ok: true});
         expect(request.error).toBeNull();
     });
@@ -200,6 +202,25 @@ describe('FetchRequest', () => {
         expect(onMessage).toHaveBeenCalledWith({ok: true});
     });
 
+    it('emits settled event on successful response', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            createJsonResponse({ok: true})
+        );
+
+        const request = new FetchRequest<{ok: boolean}>('request-1', {
+            url,
+        });
+
+        const onSettled = vi.fn();
+
+        request.onSettled(onSettled);
+
+        await waitForPromises();
+
+        expect(onSettled).toHaveBeenCalledOnce();
+        expect(onSettled).toHaveBeenCalledWith(RequestStatus.Completed, null);
+    });
+
     it('uses custom response parser', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             createTextResponse('42')
@@ -220,6 +241,7 @@ describe('FetchRequest', () => {
 
         expect(responseParser).toHaveBeenCalledOnce();
         expect(request.status).toBe(RequestStatus.Completed);
+        expect(request.settled).toBe(true);
         expect(request.data).toBe(42);
     });
 
@@ -236,6 +258,7 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.settled).toBe(true);
         expect(request.error).toEqual(new Error('Error 404: Not Found'));
     });
 
@@ -260,6 +283,28 @@ describe('FetchRequest', () => {
         );
     });
 
+    it('emits settled event on non-ok response', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response('Server error', {
+                status: 500,
+                statusText: 'Internal Server Error',
+            })
+        );
+
+        const request = new FetchRequest('request-1', {url});
+        const onSettled = vi.fn();
+
+        request.onSettled(onSettled);
+
+        await waitForPromises();
+
+        expect(onSettled).toHaveBeenCalledOnce();
+        expect(onSettled.mock.calls[0][0]).toBe(RequestStatus.Failed);
+        expect(onSettled.mock.calls[0][1]).toEqual(
+            new Error('Error 500: Internal Server Error')
+        );
+    });
+
     it('fails request when fetch rejects', async () => {
         vi.spyOn(globalThis, 'fetch').mockRejectedValue(
             new Error('Network error')
@@ -270,6 +315,7 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.settled).toBe(true);
         expect(request.error).toEqual(new Error('Network error'));
     });
 
@@ -281,6 +327,7 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.settled).toBe(true);
         expect(request.error).toEqual(new Error('Network error'));
     });
 
@@ -299,7 +346,31 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.settled).toBe(true);
         expect(request.error).toEqual(new Error('Parse error'));
+    });
+
+    it('emits settled event when response parser throws', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            createJsonResponse({ok: true})
+        );
+
+        const request = new FetchRequest('request-1', {
+            url,
+            responseParser: async () => {
+                throw new Error('Parse error');
+            },
+        });
+
+        const onSettled = vi.fn();
+
+        request.onSettled(onSettled);
+
+        await waitForPromises();
+
+        expect(onSettled).toHaveBeenCalledOnce();
+        expect(onSettled.mock.calls[0][0]).toBe(RequestStatus.Failed);
+        expect(onSettled.mock.calls[0][1]).toEqual(new Error('Parse error'));
     });
 
     it('aborts pending request and emits abort event', () => {
@@ -313,7 +384,22 @@ describe('FetchRequest', () => {
         request.abort();
 
         expect(request.status).toBe(RequestStatus.Aborted);
+        expect(request.settled).toBe(true);
         expect(onAbort).toHaveBeenCalledOnce();
+    });
+
+    it('emits settled event when request is aborted', () => {
+        vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+
+        const request = new FetchRequest('request-1', {url});
+        const onSettled = vi.fn();
+
+        request.onSettled(onSettled);
+
+        request.abort();
+
+        expect(onSettled).toHaveBeenCalledOnce();
+        expect(onSettled).toHaveBeenCalledWith(RequestStatus.Aborted, null);
     });
 
     it('passes abort signal to fetch', () => {
@@ -338,13 +424,16 @@ describe('FetchRequest', () => {
 
         const request = new FetchRequest('request-1', {url});
         const onAbort = vi.fn();
+        const onSettled = vi.fn();
 
         request.onAbort(onAbort);
+        request.onSettled(onSettled);
 
         request.abort();
         request.abort();
 
         expect(onAbort).toHaveBeenCalledOnce();
+        expect(onSettled).toHaveBeenCalledOnce();
     });
 
     it('does not abort completed request', async () => {
@@ -384,6 +473,7 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.Aborted);
+        expect(request.settled).toBe(true);
         expect(request.error).toBeNull();
     });
 
@@ -400,6 +490,7 @@ describe('FetchRequest', () => {
         vi.advanceTimersByTime(1000);
 
         expect(request.status).toBe(RequestStatus.TimedOut);
+        expect(request.settled).toBe(true);
         expect(request.error).toEqual(
             new Error('Request timed out after 1000ms')
         );
@@ -427,6 +518,29 @@ describe('FetchRequest', () => {
         );
     });
 
+    it('emits settled event when request times out', () => {
+        vi.useFakeTimers();
+
+        vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+
+        const request = new FetchRequest('request-1', {
+            url,
+            timeout: 1000,
+        });
+
+        const onSettled = vi.fn();
+
+        request.onSettled(onSettled);
+
+        vi.advanceTimersByTime(1000);
+
+        expect(onSettled).toHaveBeenCalledOnce();
+        expect(onSettled).toHaveBeenCalledWith(
+            RequestStatus.TimedOut,
+            new Error('Request timed out after 1000ms')
+        );
+    });
+
     it('does not mark timed out request as failed after abort rejection', async () => {
         vi.useFakeTimers();
 
@@ -448,6 +562,7 @@ describe('FetchRequest', () => {
         await waitForPromises();
 
         expect(request.status).toBe(RequestStatus.TimedOut);
+        expect(request.settled).toBe(true);
         expect(request.error).toEqual(
             new Error('Request timed out after 1000ms')
         );
@@ -470,6 +585,7 @@ describe('FetchRequest', () => {
         vi.advanceTimersByTime(1000);
 
         expect(request.status).toBe(RequestStatus.Completed);
+        expect(request.settled).toBe(true);
         expect(request.data).toEqual({ok: true});
     });
 
@@ -488,5 +604,6 @@ describe('FetchRequest', () => {
         vi.advanceTimersByTime(1000);
 
         expect(request.status).toBe(RequestStatus.Aborted);
+        expect(request.settled).toBe(true);
     });
 });

@@ -97,3 +97,34 @@ export enum FetchRedirect {
     ERROR = 'error',
     MANUAL = 'manual',
 }
+
+export enum CloseSocketCode {
+    NORMAL = 1000,
+    ABORTED = 1001,
+    PROTOCOL_ERROR = 1002,
+    INCONSISTENT_DATA_TYPE = 1003,
+    RESERVED = 1004,
+    NO_STATUS = 1005,
+    CONNECTION_LOST = 1006,
+    INCONSISTENT_MESSAGE_TYPE = 1007,
+    VIOLATES_POLICY_MESSAGE = 1008,
+    MESSAGE_IS_TOO_BIG = 1009,
+    NEGOTIATION_FAILED = 1010,
+    UNEXPECTED_CONDITIONS = 1011,
+    SECURITY_ERROR = 1015,
+}
+
+export const ALLOWED_CLOSE_SOCKET_CODES = [
+    CloseSocketCode.NORMAL,
+    CloseSocketCode.ABORTED,
+    CloseSocketCode.PROTOCOL_ERROR,
+    CloseSocketCode.INCONSISTENT_DATA_TYPE,
+    CloseSocketCode.INCONSISTENT_MESSAGE_TYPE,
+    CloseSocketCode.VIOLATES_POLICY_MESSAGE,
+    CloseSocketCode.MESSAGE_IS_TOO_BIG,
+    CloseSocketCode.NEGOTIATION_FAILED,
+    CloseSocketCode.UNEXPECTED_CONDITIONS,
+] as const satisfies readonly CloseSocketCode[];
+
+export type AllowedCloseSocketCode =
+    (typeof ALLOWED_CLOSE_SOCKET_CODES)[number];

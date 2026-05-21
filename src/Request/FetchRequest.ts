@@ -244,13 +244,15 @@ export default class FetchRequest<Data> extends Request<Data> {
                         this._processError(
                             error instanceof Error
                                 ? error
-                                : new Error(String(error))
+                                : new Error(String(error)),
+                            true
                         );
                     }
                 } else {
                     const {status, statusText} = result;
                     this._processError(
-                        new Error(`Error ${status}: ${statusText}`)
+                        new Error(`Error ${status}: ${statusText}`),
+                        true
                     );
                 }
             },
@@ -264,7 +266,8 @@ export default class FetchRequest<Data> extends Request<Data> {
                     this._processError(
                         error instanceof Error
                             ? error
-                            : new Error(String(error))
+                            : new Error(String(error)),
+                        true
                     );
                 }
             }
