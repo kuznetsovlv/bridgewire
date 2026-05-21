@@ -1,7 +1,7 @@
 import {HTTPMethod, Protocol, Query, TransportType} from './types';
 import {transportAndProtocolAssert} from './utils';
 import {parseUrl} from '@/utils';
-import BridgeWireTransport from '@/BridgeWireTransport/BridgeWireTransport';
+// import BridgeWireTransport from '@/BridgeWireTransport/BridgeWireTransport';
 
 /**
  * Fluent configuration builder for BridgeWire clients.
@@ -24,14 +24,14 @@ import BridgeWireTransport from '@/BridgeWireTransport/BridgeWireTransport';
 export default class BridgeWireBuilder<RequestData, ResponseData> {
     #transport?: TransportType;
     #protocol?: Protocol;
-    #host?: string;
-    #port?: number;
-    #path?: string;
-    #query?: Query;
-    #hash?: string;
-    #method?: HTTPMethod;
+    // #host?: string;
+    // #port?: number;
+    // #path?: string;
+    // #query?: Query;
+    // #hash?: string;
+    // #method?: HTTPMethod;
     #headers?: HeadersInit;
-    #timeOut?: number;
+    // #timeOut?: number;
 
     /**
      * Sets the transport implementation type.
