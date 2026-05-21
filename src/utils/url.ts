@@ -1,5 +1,4 @@
-import {Protocol} from '@/types';
-import type {Query, URLData} from '@/types';
+import {Protocol, Query, TransportType, URLData} from '@/types';
 
 const PROTOCOL_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//;
 
@@ -77,7 +76,60 @@ export function parseUrl(url: string): URLData {
 }
 
 /**
+ * Builds a URL instance from normalized URL data.
+ *
+ * Missing protocol, host, and port values are filled with runtime defaults.
+ * Query values can be strings or arrays of strings. Array values are serialized
+ * as repeated query parameters.
+ *
+ * Hash can be passed with or without the leading `#`.
+ *
+ * @param data - Normalized URL data.
+ * @returns URL instance built from the provided data and defaults.
+ *
+ * @example
+ * constructUrl({
+ *     protocol: Protocol.HTTPS,
+ *     host: 'example.com',
+ *     path: '/api',
+ *     query: {tag: ['a', 'b']},
+ *     hash: 'top',
+ * })
+ * // URL('https://example.com:443/api?tag=a&tag=b#top')
+ */
+export function constructUrl({
+    query = {},
+    path,
+    protocol = getDefaultProtocol(),
+    host = getDefaultHost(),
+    port = getDefaultPort(protocol),
+    hash,
+}: URLData): URL {
+    const base = `${stringifyProtocol(protocol)}//${host}:${port}`;
+    const searchParams = Object.entries(query).reduce((res, [key, value]) => {
+        if (typeof value === 'string') {
+            res.append(key, value);
+        } else if (Array.isArray(value)) {
+            value.forEach((v) => res.append(key, v));
+        }
+        return res;
+    }, new URLSearchParams());
+
+    let pathUrl = searchParams.size
+        ? `${path}?${searchParams.toString()}`
+        : path;
+    if (hash) {
+        pathUrl = `${pathUrl}${hash.startsWith('#') ? hash : `#${hash}`}`;
+    }
+
+    return new URL(pathUrl, base);
+}
+
+/**
  * Converts a protocol enum value to a URL protocol string.
+ *
+ * @param protocol - Protocol enum value.
+ * @returns URL protocol string with trailing colon, or an empty string when omitted.
  */
 export function stringifyProtocol(protocol?: Protocol): string {
     switch (protocol) {
@@ -95,7 +147,10 @@ export function stringifyProtocol(protocol?: Protocol): string {
 }
 
 /**
- * Parses a URL protocol string into a Protocol enum value.
+ * Parses a URL protocol string into a supported Protocol enum value.
+ *
+ * @param str - URL protocol string with trailing colon.
+ * @returns Matching Protocol enum value, or `undefined` for unsupported protocols.
  */
 export function parseProtocol(str?: string): Protocol | undefined {
     switch (str) {
@@ -113,7 +168,11 @@ export function parseProtocol(str?: string): Protocol | undefined {
 /**
  * Converts URLSearchParams into a plain query object.
  *
- * Repeated keys are represented as arrays.
+ * Repeated keys are represented as arrays. Single keys are represented as
+ * strings.
+ *
+ * @param search - URLSearchParams instance.
+ * @returns Plain query object.
  */
 export function searchToQueryData(search: URLSearchParams): Query {
     const query: Query = {};
@@ -137,14 +196,41 @@ export function searchToQueryData(search: URLSearchParams): Query {
 }
 
 /**
- * Returns the protocol of the current runtime location, if available.
+ * Returns the default protocol for the current runtime or requested transport.
+ *
+ * When a transport type is provided, HTTP-like protocols are mapped to the
+ * corresponding transport protocol:
+ * - protected runtime protocols produce `https` for fetch and `wss` for WebSocket
+ * - unprotected runtime protocols produce `http` for fetch and `ws` for WebSocket
+ *
+ * Outside browser-like environments, `http` is used as the base default.
+ *
+ * @param transport - Optional transport type used to adapt the default protocol.
+ * @returns Default protocol.
  */
-export function getDefaultProtocol(): Protocol {
-    return parseProtocol(globalThis?.location?.protocol) ?? Protocol.HTTP;
+export function getDefaultProtocol(transport?: TransportType): Protocol {
+    const defaultProtocol =
+        parseProtocol(globalThis?.location?.protocol) ?? Protocol.HTTP;
+    const isProtected = [Protocol.HTTPS, Protocol.WSS].includes(
+        defaultProtocol
+    );
+
+    switch (transport) {
+        case TransportType.WEBSOCKET:
+            return isProtected ? Protocol.WSS : Protocol.WS;
+        case TransportType.FETCH:
+            return isProtected ? Protocol.HTTPS : Protocol.HTTP;
+        default:
+            return defaultProtocol;
+    }
 }
 
 /**
- * Returns the host of the current runtime location, or localhost outside browser-like environments.
+ * Returns the host of the current runtime location.
+ *
+ * Falls back to `localhost` outside browser-like environments.
+ *
+ * @returns Default host.
  */
 export function getDefaultHost(): string {
     return globalThis?.location?.host ?? 'localhost';
@@ -152,6 +238,9 @@ export function getDefaultHost(): string {
 
 /**
  * Returns the default port for a supported protocol.
+ *
+ * @param protocol - Supported protocol.
+ * @returns Default port number.
  */
 export function getDefaultPort(protocol: Protocol): number {
     switch (protocol) {

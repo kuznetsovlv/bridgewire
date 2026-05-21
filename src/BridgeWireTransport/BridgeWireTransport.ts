@@ -4,6 +4,7 @@ import type {
     UnsubscribeMethod,
     BridgeWireTransportAbortCallback,
     BridgeWireTransportCallback,
+    BridgeWireTransportSettledCallback,
     ErrorCallback,
 } from '@/types';
 import {TransportStatus} from '@/types';
@@ -24,6 +25,7 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
     readonly #messageCallbacks: Set<BridgeWireTransportCallback<ResponseData>>;
     readonly #requestErrorCallbacks: Set<BridgeWireTransportCallback<Error>>;
     readonly #errorCallbacks: Set<ErrorCallback>;
+    readonly #settledCallbacks: Set<BridgeWireTransportSettledCallback>;
 
     protected _status: TransportStatus;
     protected _requests: Map<RequestId, Request<ResponseData>>;
@@ -53,6 +55,7 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
         this.#messageCallbacks = new Set();
         this.#requestErrorCallbacks = new Set();
         this.#errorCallbacks = new Set();
+        this.#settledCallbacks = new Set();
 
         this._status = status;
         this._requests = new Map();
@@ -63,8 +66,11 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
      * request-level events to transport-level subscribers.
      *
      * The request remains the source of request-level events. The transport only
-     * forwards those events to its own subscribers and removes the request from the
-     * active collection when it is aborted.
+     * forwards those events to its own subscribers.
+     *
+     * The request is removed from the active collection when it reaches a terminal
+     * state. Abort events are forwarded separately so consumers can react to
+     * explicit cancellation.
      *
      * Concrete transport implementations should call this method after creating a
      * request object.
@@ -89,6 +95,13 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
             this.#requestErrorCallbacks.forEach((callback) => {
                 callback(request.id, error);
             });
+        });
+
+        request.onSettled?.((status, error) => {
+            this._requests.delete(request.id);
+            this.#settledCallbacks.forEach((callback) =>
+                callback(request.id, status, error)
+            );
         });
     }
 
@@ -167,6 +180,21 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
      */
     public onError(callback: ErrorCallback): UnsubscribeMethod {
         return subscribe(callback, this.#errorCallbacks);
+    }
+
+    /**
+     * Subscribes to request settled events.
+     *
+     * The callback is called with request id, final request status, and latest
+     * request error when a tracked request reaches a terminal state.
+     *
+     * @param callback - Callback called when a request is settled.
+     * @returns Function that removes the callback from the listener collection.
+     */
+    public onSettled(
+        callback: BridgeWireTransportSettledCallback
+    ): UnsubscribeMethod {
+        return subscribe(callback, this.#settledCallbacks);
     }
 
     /**

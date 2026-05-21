@@ -39,7 +39,7 @@ export type Config = RequiredNullable<
         transport: TransportType;
         method: HTTPMethod;
         headers: HeadersInit;
-        timeOut: number;
+        timeout: number;
     } & URLData
 >;
 
@@ -62,6 +62,11 @@ export interface RequestOptions {
 
 export type BridgeWireTransportCallback<T> = (id: RequestId, data: T) => void;
 export type BridgeWireTransportAbortCallback = (id: RequestId) => void;
+export type BridgeWireTransportSettledCallback = (
+    id: RequestId,
+    status: RequestStatus,
+    error: Error | null
+) => void;
 
 export enum TransportStatus {
     Disconnected = 'Disconnected',
@@ -128,3 +133,11 @@ export const ALLOWED_CLOSE_SOCKET_CODES = [
 
 export type AllowedCloseSocketCode =
     (typeof ALLOWED_CLOSE_SOCKET_CODES)[number];
+
+export enum PayloadDataType {
+    TEXT = 'Text',
+    JSON = 'JSON',
+    BLOB = 'Blob',
+    FORM_DATA = 'FormData',
+    ARRAY_BUFFER = 'ArrayBuffer',
+}
