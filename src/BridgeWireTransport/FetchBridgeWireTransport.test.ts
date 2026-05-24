@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
-import FetchBridgeWireTransport from './FetchBridgeWireTransport';
+
 import {
     FetchCache,
     FetchCredentials,
@@ -11,6 +11,8 @@ import {
     RequestStatus,
     TransportStatus,
 } from '@/types';
+
+import FetchBridgeWireTransport from './FetchBridgeWireTransport';
 
 const urlData = {
     protocol: Protocol.HTTPS,

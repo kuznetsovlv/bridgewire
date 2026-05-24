@@ -1,3 +1,4 @@
+import type {Request} from '@/Request';
 import type {
     BridgeWireTransportAbortCallback,
     BridgeWireTransportCallback,
@@ -10,7 +11,6 @@ import type {
 } from '@/types';
 import {TransportStatus} from '@/types';
 import {subscribe} from '@/utils';
-import {Request} from '@/Request';
 
 /**
  * Base transport implementation for BridgeWire request/response communication.

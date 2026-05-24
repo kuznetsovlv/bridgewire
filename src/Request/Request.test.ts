@@ -1,7 +1,9 @@
 import {describe, expect, it, vi} from 'vitest';
-import Request from './Request';
+
 import type {RequestId} from '@/types';
 import {RequestStatus} from '@/types';
+
+import Request from './Request';
 
 class TestRequest<Data> extends Request<Data> {
     public constructor(id: RequestId, status = RequestStatus.Pending) {

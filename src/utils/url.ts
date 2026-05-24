@@ -1,4 +1,5 @@
-import {Protocol, Query, TransportType, URLData} from '@/types';
+import type {Query, URLData} from '@/types';
+import {Protocol, TransportType} from '@/types';
 
 const PROTOCOL_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//;
 

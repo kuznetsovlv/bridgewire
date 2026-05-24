@@ -1,4 +1,6 @@
-import BridgeWireTransport from './BridgeWireTransport';
+import type {FetchResponseParser} from '@/Request';
+import type {Request} from '@/Request';
+import {FetchRequest} from '@/Request';
 import type {
     BaseFetchRequestData,
     Nullable,
@@ -7,11 +9,9 @@ import type {
     URLData,
 } from '@/types';
 import {HTTPMethod, PayloadDataType, TransportStatus} from '@/types';
-import {Request} from '@/Request';
 import {constructUrl} from '@/utils';
-import type {FetchResponseParser} from '@/Request';
 
-import {FetchRequest} from '@/Request';
+import BridgeWireTransport from './BridgeWireTransport';
 
 /**
  * Fetch transport configuration.

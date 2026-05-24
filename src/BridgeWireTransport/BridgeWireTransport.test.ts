@@ -1,8 +1,10 @@
 import {describe, expect, it, vi} from 'vitest';
-import BridgeWireTransport from './BridgeWireTransport';
+
+import {Request} from '@/Request';
 import type {Nullable, RequestId} from '@/types';
 import {RequestStatus, TransportStatus} from '@/types';
-import {Request} from '@/Request';
+
+import BridgeWireTransport from './BridgeWireTransport';
 
 class TestRequest<Data> extends Request<Data> {
     public constructor(id: RequestId, status = RequestStatus.Pending) {

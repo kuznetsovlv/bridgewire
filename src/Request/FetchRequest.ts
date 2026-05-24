@@ -1,4 +1,4 @@
-import Request from './Request';
+import type {BaseFetchRequestData, RequestId} from '@/types';
 import {
     FetchCache,
     FetchCredentials,
@@ -7,7 +7,8 @@ import {
     HTTPMethod,
     RequestStatus,
 } from '@/types';
-import type {RequestId, BaseFetchRequestData} from '@/types';
+
+import Request from './Request';
 
 /**
  * Parses a fetch response into request data.

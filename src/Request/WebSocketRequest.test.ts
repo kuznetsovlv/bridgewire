@@ -1,6 +1,8 @@
 import {describe, expect, it, vi} from 'vitest';
-import WebSocketRequest from './WebSocketRequest';
+
 import {CloseSocketCode, RequestStatus} from '@/types';
+
+import WebSocketRequest from './WebSocketRequest';
 
 class MockWebSocket extends EventTarget {
     public readyState: number;

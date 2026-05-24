@@ -1,10 +1,7 @@
+import type {AllowedCloseSocketCode, RequestId} from '@/types';
+import {CloseSocketCode, RequestStatus} from '@/types';
+
 import Request from './Request';
-import {
-    AllowedCloseSocketCode,
-    CloseSocketCode,
-    RequestId,
-    RequestStatus,
-} from '@/types';
 
 /**
  * Parses a WebSocket message event into request data.

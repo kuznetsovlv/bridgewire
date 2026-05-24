@@ -1,5 +1,7 @@
 import {describe, expect, it} from 'vitest';
+
 import {PayloadDataType, Protocol, TransportType} from '@/types';
+
 import {
     protocolAndDataTypeAssert,
     transportAndDataTypeAssert,

@@ -1,6 +1,8 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
-import FetchRequest, {defaultResponseParser} from './FetchRequest';
+
 import {HTTPMethod, RequestStatus} from '@/types';
+
+import FetchRequest, {defaultResponseParser} from './FetchRequest';
 
 const url = new URL('https://example.com/api');
 

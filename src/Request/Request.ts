@@ -1,4 +1,5 @@
-import {RequestId, RequestStatus, UnsubscribeMethod} from '@/types';
+import type {RequestId, UnsubscribeMethod} from '@/types';
+import {RequestStatus} from '@/types';
 import {subscribe} from '@/utils';
 
 /**

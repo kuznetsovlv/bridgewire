@@ -1,15 +1,17 @@
-import {
-    HTTPMethod,
-    PayloadDataType,
-    Protocol,
-    Query,
-    TransportType,
-    URLData,
-    FetchMode,
-    FetchCredentials,
+import type {BridgeWireTransport} from '@/BridgeWireTransport';
+import {FetchBridgeWireTransport} from '@/BridgeWireTransport';
+import {parseUrl} from '@/utils';
+
+import type {
     FetchCache,
+    FetchCredentials,
+    FetchMode,
     FetchRedirect,
+    PayloadDataType,
+    Query,
+    URLData,
 } from './types';
+import {HTTPMethod, Protocol, TransportType} from './types';
 import {
     getDefaultHost,
     getDefaultPort,
@@ -18,11 +20,6 @@ import {
     transportAndDataTypeAssert,
     transportAndProtocolAssert,
 } from './utils';
-import {parseUrl} from '@/utils';
-import {
-    BridgeWireTransport,
-    FetchBridgeWireTransport,
-} from '@/BridgeWireTransport';
 
 /**
  * Fluent configuration builder for BridgeWire transports.

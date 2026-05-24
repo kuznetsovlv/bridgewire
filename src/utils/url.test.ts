@@ -1,5 +1,7 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
+
 import {Protocol, TransportType} from '@/types';
+
 import {
     constructUrl,
     getDefaultHost,
