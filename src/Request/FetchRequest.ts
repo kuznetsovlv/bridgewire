@@ -7,7 +7,7 @@ import {
     HTTPMethod,
     RequestStatus,
 } from '@/types';
-import type {RequestId} from '@/types';
+import type {RequestId, BaseFetchRequestData} from '@/types';
 
 /**
  * Parses a fetch response into request data.
@@ -19,86 +19,17 @@ export type FetchResponseParser<Data> = (response: Response) => Promise<Data>;
 /**
  * Fetch request configuration.
  *
- * Most options map directly to the standard `fetch` init options.
+ * Extends normalized Fetch request defaults with the required request URL and
+ * an optional response parser. Most inherited options map directly to the
+ * standard `fetch` init options.
  *
  * @template Data - Parsed response data type.
  */
-export interface FetchData<Data> {
+export interface FetchData<Data> extends Partial<BaseFetchRequestData> {
     /**
      * Request URL.
      */
     url: URL;
-
-    /**
-     * HTTP method used by the request.
-     *
-     * Defaults to `GET`.
-     */
-    method?: HTTPMethod;
-
-    /**
-     * Request headers.
-     */
-    headers?: HeadersInit;
-
-    /**
-     * Request body.
-     */
-    body?: string | FormData | Blob | BufferSource | URLSearchParams;
-
-    /**
-     * Request referrer.
-     *
-     * Defaults to `about:client`.
-     */
-    referrer?: string;
-
-    /**
-     * Request referrer policy.
-     *
-     * Defaults to `strict-origin-when-cross-origin`.
-     */
-    referrerPolicy?: ReferrerPolicy;
-
-    /**
-     * Request mode.
-     *
-     * Defaults to `cors`.
-     */
-    mode?: FetchMode;
-
-    /**
-     * Request credentials mode.
-     *
-     * Defaults to `same-origin`.
-     */
-    credentials?: FetchCredentials;
-
-    /**
-     * Request cache mode.
-     *
-     * Defaults to `default`.
-     */
-    cache?: FetchCache;
-
-    /**
-     * Request redirect mode.
-     *
-     * Defaults to `follow`.
-     */
-    redirect?: FetchRedirect;
-
-    /**
-     * Request subresource integrity value.
-     */
-    integrity?: string;
-
-    /**
-     * Whether the request may outlive the page.
-     *
-     * Defaults to `false`.
-     */
-    keepalive?: boolean;
 
     /**
      * Response parser used to convert the fetch `Response` into request data.
@@ -107,17 +38,6 @@ export interface FetchData<Data> {
      * response status and `Content-Type`.
      */
     responseParser?: FetchResponseParser<Data>;
-
-    /**
-     * Request timeout in milliseconds.
-     *
-     * When the timeout expires while the request is still pending, the
-     * underlying fetch operation is aborted and the request status becomes
-     * `TimedOut`.
-     *
-     * Defaults to `Infinity`, which disables timeout handling.
-     */
-    timeout?: number;
 }
 
 /**

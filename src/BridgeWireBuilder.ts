@@ -5,6 +5,10 @@ import {
     Query,
     TransportType,
     URLData,
+    FetchMode,
+    FetchCredentials,
+    FetchCache,
+    FetchRedirect,
 } from './types';
 import {
     getDefaultHost,
@@ -15,23 +19,28 @@ import {
     transportAndProtocolAssert,
 } from './utils';
 import {parseUrl} from '@/utils';
-import BridgeWireTransport from '@/BridgeWireTransport/BridgeWireTransport';
+import {
+    BridgeWireTransport,
+    FetchBridgeWireTransport,
+} from '@/BridgeWireTransport';
 
 /**
  * Fluent configuration builder for BridgeWire transports.
  *
- * The builder stores transport, URL, payload and request defaults step by step.
- * Each `with*` method mutates the builder state and returns the same builder
- * instance, allowing chained configuration.
+ * The builder stores transport, URL, payload, Fetch and request defaults step by
+ * step. Each `with*` method mutates the builder state and returns the same
+ * builder instance, allowing chained configuration.
  *
  * Current responsibilities:
  * - collect transport configuration
  * - collect URL parts: protocol, host, port, path, query and hash
  * - validate transport/protocol/payload data type compatibility
- * - collect HTTP-specific defaults: method, headers and timeout
+ * - collect Fetch-specific defaults: method, headers, referrer, mode,
+ *   credentials, cache, redirect, integrity and keepalive
+ * - collect request defaults such as timeout
+ * - build a Fetch-based BridgeWire transport
  *
- * The `build()` method is still in progress and will eventually produce a
- * configured BridgeWire transport instance.
+ * WebSocket transport build support is not implemented yet.
  *
  * @template RequestData - Data type accepted by the created transport.
  * @template ResponseData - Data type emitted by requests created by the transport.
@@ -55,6 +64,18 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
     #headers?: HeadersInit;
     #timeout?: number;
     #dataType?: PayloadDataType;
+    #referrer?: string;
+    #referrerPolicy?: ReferrerPolicy;
+    #mode?: FetchMode;
+    #credentials?: FetchCredentials;
+    #cache?: FetchCache;
+    #redirect?: FetchRedirect;
+    #integrity?: string;
+    #keepalive: boolean;
+
+    constructor() {
+        this.#keepalive = false;
+    }
 
     /**
      * Builds normalized URL data from explicit builder state and runtime defaults.
@@ -324,6 +345,9 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
      * @param headers - Headers to merge into current defaults.
      * @returns Current builder instance.
      */
+    // TODO: Normalize headers through the Headers API to support all HeadersInit forms:
+    // Headers instance, tuple array, and plain object. Current implementation works
+    // reliably only for plain object headers.
     public withHeaders(
         headers: HeadersInit
     ): BridgeWireBuilder<RequestData, ResponseData> {
@@ -368,13 +392,139 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
     }
 
     /**
+     * Sets the Fetch referrer.
+     *
+     * Maps to the `referrer` option of `fetch`.
+     *
+     * @param referrer - Referrer value to use for Fetch requests.
+     * @returns Current builder instance.
+     */
+    public withReferrer(
+        referrer: string
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#referrer = referrer;
+        return this;
+    }
+
+    /**
+     * Sets the Fetch referrer policy.
+     *
+     * Maps to the `referrerPolicy` option of `fetch`.
+     *
+     * @param referrerPolicy - Referrer policy to use for Fetch requests.
+     * @returns Current builder instance.
+     */
+    public withReferrerPolicy(
+        referrerPolicy: ReferrerPolicy
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#referrerPolicy = referrerPolicy;
+        return this;
+    }
+
+    /**
+     * Sets the Fetch request mode.
+     *
+     * Maps to the `mode` option of `fetch`.
+     *
+     * @param mode - Fetch mode to use.
+     * @returns Current builder instance.
+     */
+    public withMode(
+        mode: FetchMode
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#mode = mode;
+        return this;
+    }
+
+    /**
+     * Sets the Fetch credentials mode.
+     *
+     * Maps to the `credentials` option of `fetch`.
+     *
+     * @param credentials - Fetch credentials mode to use.
+     * @returns Current builder instance.
+     */
+    public withCredentials(
+        credentials: FetchCredentials
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#credentials = credentials;
+        return this;
+    }
+
+    /**
+     * Sets the Fetch cache mode.
+     *
+     * Maps to the `cache` option of `fetch`.
+     *
+     * @param cache - Fetch cache mode to use.
+     * @returns Current builder instance.
+     */
+    public withCache(
+        cache: FetchCache
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#cache = cache;
+        return this;
+    }
+
+    /**
+     * Sets the Fetch redirect mode.
+     *
+     * Maps to the `redirect` option of `fetch`.
+     *
+     * @param redirect - Fetch redirect mode to use.
+     * @returns Current builder instance.
+     */
+    public withRedirect(
+        redirect: FetchRedirect
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#redirect = redirect;
+        return this;
+    }
+
+    /**
+     * Sets the Fetch subresource integrity value.
+     *
+     * Maps to the `integrity` option of `fetch`.
+     *
+     * @param integrity - Subresource integrity metadata.
+     * @returns Current builder instance.
+     */
+    public withIntegrity(
+        integrity: string
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#integrity = integrity;
+        return this;
+    }
+
+    /**
+     * Enables or disables Fetch keepalive mode.
+     *
+     * Maps to the `keepalive` option of `fetch`. Calling this method without
+     * arguments enables keepalive.
+     *
+     * @param keepAlive - Whether Fetch requests may outlive the page.
+     * @returns Current builder instance.
+     */
+    public withKeepAlive(
+        keepAlive: boolean = true
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#keepalive = keepAlive;
+        return this;
+    }
+
+    /**
      * Builds a configured BridgeWire transport instance.
      *
-     * This method is still in progress. The final implementation should resolve
-     * URL defaults, infer or use the selected transport type, apply request
-     * defaults, and return a concrete transport implementation.
+     * Currently supports Fetch transport builds. WebSocket transport build support
+     * is not implemented yet.
+     *
+     * During build, the builder resolves URL defaults, infers or uses the selected
+     * transport type, normalizes timeout, applies request defaults, and creates a
+     * concrete transport implementation.
      *
      * @returns Configured BridgeWire transport instance.
+     *
+     * @throws Error when the selected or inferred transport is not supported yet.
      */
     public build(): BridgeWireTransport<RequestData, ResponseData> {
         const urlData = this.#getURLData();
@@ -383,6 +533,24 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
 
         if (transport === TransportType.FETCH) {
             const method = this.#getMethod();
+
+            return new FetchBridgeWireTransport<RequestData, ResponseData>({
+                urlData,
+                method,
+                timeout,
+                headers: this.#headers ?? {},
+                referrer: this.#referrer,
+                referrerPolicy: this.#referrerPolicy,
+                mode: this.#mode,
+                credentials: this.#credentials,
+                cache: this.#cache,
+                redirect: this.#redirect,
+                integrity: this.#integrity,
+                keepalive: this.#keepalive,
+                dataType: this.#dataType,
+            });
         }
+
+        throw new Error(`Unsupported transport "${transport}".`);
     }
 }

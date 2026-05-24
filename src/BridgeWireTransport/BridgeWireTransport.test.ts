@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
 import BridgeWireTransport from './BridgeWireTransport';
-import type {RequestId} from '@/types';
+import type {Nullable, RequestId} from '@/types';
 import {RequestStatus, TransportStatus} from '@/types';
 import {Request} from '@/Request';
 
@@ -39,8 +39,8 @@ class TestTransport extends BridgeWireTransport<string, string> {
         this._registerRequest(request);
     }
 
-    public addRequest(id: RequestId, request: Request<string>): void {
-        this._requests.set(id, request);
+    public emitError(error: Error): void {
+        this._emitError(error);
     }
 
     public hasRequest(id: RequestId): boolean {
@@ -51,8 +51,12 @@ class TestTransport extends BridgeWireTransport<string, string> {
         return this._requests.size;
     }
 
-    public send(): Request<string> {
-        throw new Error('Not implemented');
+    public send(data: string): Nullable<Request<string>> {
+        const request = new TestRequest<string>(data);
+
+        this._registerRequest(request);
+
+        return request;
     }
 }
 
@@ -71,6 +75,16 @@ describe('BridgeWireTransport', () => {
 
         expect(transport.hasRequest('request-1')).toBe(true);
         expect(transport.requestCount).toBe(1);
+    });
+
+    it('registers request created by send', () => {
+        const transport = new TestTransport(TransportStatus.Connected);
+
+        const request = transport.send('request-1');
+
+        expect(request).toBeInstanceOf(TestRequest);
+        expect(request?.id).toBe('request-1');
+        expect(transport.hasRequest('request-1')).toBe(true);
     });
 
     it('forwards request message events with request id', () => {
@@ -334,5 +348,32 @@ describe('BridgeWireTransport', () => {
         transport.abort('request-1');
 
         expect(onAbort).not.toHaveBeenCalled();
+    });
+
+    it('emits transport-level error and marks transport as error', () => {
+        const transport = new TestTransport(TransportStatus.Connected);
+        const onError = vi.fn();
+        const error = new Error('Transport failed');
+
+        transport.onError(onError);
+
+        transport.emitError(error);
+
+        expect(transport.status).toBe(TransportStatus.Error);
+        expect(onError).toHaveBeenCalledOnce();
+        expect(onError).toHaveBeenCalledWith(error);
+    });
+
+    it('allows transport-level error subscribers to unsubscribe', () => {
+        const transport = new TestTransport(TransportStatus.Connected);
+        const onError = vi.fn();
+
+        const unsubscribe = transport.onError(onError);
+
+        unsubscribe();
+        transport.emitError(new Error('Transport failed'));
+
+        expect(transport.status).toBe(TransportStatus.Error);
+        expect(onError).not.toHaveBeenCalled();
     });
 });

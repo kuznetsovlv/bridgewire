@@ -17,3 +17,8 @@ export default function getBridgeWireBuilder<
 >(): BridgeWireBuilder<RequestData, ResponseData> {
     return new BridgeWireBuilder();
 }
+
+// TODO: Review public exports before release.
+// Export only the stable public API: builder factory, transport/request types
+// needed by users, public enums and callback types. Keep internal helper types,
+// normalized config shapes and implementation details private.

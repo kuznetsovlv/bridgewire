@@ -1,11 +1,12 @@
 import type {
-    RequestOptions,
-    RequestId,
-    UnsubscribeMethod,
     BridgeWireTransportAbortCallback,
     BridgeWireTransportCallback,
     BridgeWireTransportSettledCallback,
     ErrorCallback,
+    Nullable,
+    RequestId,
+    RequestOptions,
+    UnsubscribeMethod,
 } from '@/types';
 import {TransportStatus} from '@/types';
 import {subscribe} from '@/utils';
@@ -106,6 +107,22 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
     }
 
     /**
+     * Marks the transport as failed and notifies transport-level error subscribers.
+     *
+     * Transport-level errors are not tied to a specific request. Concrete
+     * implementations should use this method for connection errors, configuration
+     * errors, serialization errors, or other transport-wide failures.
+     *
+     * @param error - Transport-level error.
+     */
+    protected _emitError(error: Error): void {
+        this._status = TransportStatus.Error;
+        this.#errorCallbacks.forEach((callback) => {
+            callback(error);
+        });
+    }
+
+    /**
      * Aborts one, several, or all active requests.
      *
      * - When a request id is provided, only that request is aborted.
@@ -201,15 +218,19 @@ export default abstract class BridgeWireTransport<RequestData, ResponseData> {
      * Sends request data through the concrete transport implementation.
      *
      * Implementations are responsible for creating a request object, registering it
-     * with `_registerRequest`, delivering the request payload, and resolving or
-     * rejecting the request result according to the transport response.
+     * with `_registerRequest`, delivering the request payload, and updating the
+     * request lifecycle according to the transport response.
      *
-     * @param request - Request payload to send.
+     * Implementations may return `null` when a request cannot be created or sent,
+     * for example when the transport is disconnected, misconfigured, or does not
+     * support the requested operation.
+     *
+     * @param data - Request payload to send.
      * @param options - Optional request options, such as timeout.
-     * @returns Request object representing the sent request.
+     * @returns Request object representing the sent request, or `null` when no request was created.
      */
     public abstract send(
-        request: RequestData,
+        data: RequestData,
         options?: RequestOptions
-    ): Request<ResponseData>;
+    ): Nullable<Request<ResponseData>>;
 }
