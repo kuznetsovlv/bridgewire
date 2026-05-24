@@ -6,6 +6,8 @@
 
 The goal of the project is to provide a unified interface for sending requests over different transports, such as Fetch and WebSocket, with a clean and extensible architecture.
 
+[Coverage report](https://kuznetsovlv.github.io/bridgewire/)
+
 ## Features
 
 Planned features:

@@ -1,60 +1,65 @@
 {
-  "name": "bridgewire",
-  "version": "1.0.2",
-  "description": "Transport-agnostic client for HTTP and WebSocket communication",
-  "keywords": [],
-  "author": "Kuznetsov Leonid",
-  "license": "MIT",
-  "type": "module",
-  "main": "./dist/bridgewire.cjs",
-  "module": "./dist/bridgewire.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/bridgewire.js",
-      "require": "./dist/bridgewire.cjs"
+    "name": "bridgewire",
+    "version": "1.0.2",
+    "description": "Transport-agnostic client for HTTP and WebSocket communication",
+    "keywords": [],
+    "author": "Kuznetsov Leonid",
+    "license": "MIT",
+    "type": "module",
+    "main": "./dist/bridgewire.cjs",
+    "module": "./dist/bridgewire.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/bridgewire.js",
+            "require": "./dist/bridgewire.cjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kuznetsovlv/bridgewire.git"
+    },
+    "bugs": {
+        "url": "https://github.com/kuznetsovlv/bridgewire/issues"
+    },
+    "homepage": "https://github.com/kuznetsovlv/bridgewire#readme",
+    "scripts": {
+        "dev": "vite",
+        "prebuild": "npm run clean",
+        "build": "vite build",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "coverage": "vitest run --coverage",
+        "lint": "eslint .",
+        "format": "prettier . --write",
+        "format:check": "prettier . --check",
+        "check": "npm run lint && npm run format:check && npm run test && npm run build",
+        "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+        "changeset": "changeset",
+        "version-packages": "changeset version",
+        "release": "npm run check && changeset publish"
+    },
+    "devDependencies": {
+        "@changesets/cli": "^2.31.0",
+        "@eslint/js": "^10.0.1",
+        "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+        "@types/node": "^25.6.0",
+        "@vitest/coverage-v8": "^4.1.7",
+        "eslint": "^10.3.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-simple-import-sort": "^13.0.0",
+        "prettier": "^3.8.3",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.59.2",
+        "vite": "^8.0.10",
+        "vite-plugin-dts": "^5.0.0",
+        "vitest": "^4.1.5"
+    },
+    "publishConfig": {
+        "access": "public"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kuznetsovlv/bridgewire.git"
-  },
-  "bugs": {
-    "url": "https://github.com/kuznetsovlv/bridgewire/issues"
-  },
-  "homepage": "https://github.com/kuznetsovlv/bridgewire#readme",
-  "scripts": {
-    "dev": "vite",
-    "prebuild": "npm run clean",
-    "build": "vite build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint .",
-    "format": "prettier . --write",
-    "format:check": "prettier . --check",
-    "check": "npm run lint && npm run format:check && npm run test && npm run build",
-    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "npm run check && changeset publish"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^25.6.0",
-    "eslint": "^10.3.0",
-    "prettier": "^3.8.3",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.10",
-    "vite-plugin-dts": "^5.0.0",
-    "vitest": "^4.1.5"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
 }
