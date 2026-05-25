@@ -20,7 +20,26 @@ export default function getBridgeWireBuilder<
     return new BridgeWireBuilder();
 }
 
-// TODO: Review public exports before release.
-// Export only the stable public API: builder factory, transport/request types
-// needed by users, public enums and callback types. Keep internal helper types,
-// normalized config shapes and implementation details private.
+export {
+    FetchCache,
+    FetchCredentials,
+    FetchMode,
+    FetchRedirect,
+    HTTPMethod,
+    PayloadDataType,
+    Protocol,
+    RequestStatus,
+    TransportStatus,
+    TransportType,
+} from './types';
+
+export type {
+    BridgeWireTransportAbortCallback,
+    BridgeWireTransportCallback,
+    BridgeWireTransportSettledCallback,
+    ErrorCallback,
+    Query,
+    RequestId,
+    RequestOptions,
+    UnsubscribeMethod,
+} from './types';
