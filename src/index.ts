@@ -3,11 +3,13 @@ import BridgeWireBuilder from './BridgeWireBuilder';
 /**
  * Creates a new BridgeWire builder instance.
  *
- * The builder is used to configure request defaults, choose a transport type,
- * build request URLs, and create a BridgeWire transport instance.
+ * This helper is the main entry point for configuring BridgeWire transports.
+ * The returned builder can be used to configure request defaults, choose or
+ * infer a transport type, build request URLs, and create a concrete BridgeWire
+ * transport instance.
  *
- * @template RequestData - Data type accepted by the configured transport.
- * @template ResponseData - Data type emitted by requests created by the transport.
+ * @template RequestData - Data type accepted by the transport created by the builder.
+ * @template ResponseData - Data type emitted by requests created by that transport.
  *
  * @returns New BridgeWire builder instance.
  */

@@ -3,7 +3,10 @@ import FetchRequest, {
     type FetchResponseParser,
 } from './FetchRequest';
 import Request from './Request';
-import WebSocketRequest, {type WebSocketData} from './WebSocketRequest';
+import WebSocketRequest, {
+    type WebSocketData,
+    type WebSocketMessageParser,
+} from './WebSocketRequest';
 
 export {
     FetchData,
@@ -11,5 +14,6 @@ export {
     FetchResponseParser,
     Request,
     WebSocketData,
+    WebSocketMessageParser,
     WebSocketRequest,
 };

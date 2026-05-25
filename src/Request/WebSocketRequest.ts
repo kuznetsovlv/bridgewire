@@ -150,9 +150,9 @@ export default class WebSocketRequest<Data> extends Request<Data> {
         switch (socket.readyState) {
             case WebSocket.CONNECTING:
             case WebSocket.OPEN:
-            case WebSocket.CLOSING:
             default:
                 return RequestStatus.Pending;
+            case WebSocket.CLOSING:
             case WebSocket.CLOSED:
                 return RequestStatus.Failed;
         }

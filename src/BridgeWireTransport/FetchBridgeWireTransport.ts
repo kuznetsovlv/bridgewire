@@ -1,5 +1,4 @@
-import type {FetchResponseParser} from '@/Request';
-import type {Request} from '@/Request';
+import type {FetchResponseParser, Request} from '@/Request';
 import {FetchRequest} from '@/Request';
 import type {
     BaseFetchRequestData,
@@ -9,7 +8,7 @@ import type {
     URLData,
 } from '@/types';
 import {HTTPMethod, PayloadDataType, TransportStatus} from '@/types';
-import {constructUrl} from '@/utils';
+import {constructUrl, isArrayBufferView} from '@/utils';
 
 import BridgeWireTransport from './BridgeWireTransport';
 
@@ -43,21 +42,6 @@ interface TransportData extends Partial<BaseFetchRequestData> {
  * Fetch-compatible request body type.
  */
 type FetchBody = BaseFetchRequestData['body'];
-
-/**
- * Checks whether a value is an ArrayBuffer view backed by a regular ArrayBuffer.
- *
- * SharedArrayBuffer-backed views are intentionally excluded because they are not
- * accepted as Fetch BodyInit in all environments.
- *
- * @param value - Value to check.
- * @returns Whether the value is an ArrayBuffer view backed by ArrayBuffer.
- */
-const isArrayBufferView = (
-    value: unknown
-): value is ArrayBufferView<ArrayBuffer> => {
-    return ArrayBuffer.isView(value) && value.buffer instanceof ArrayBuffer;
-};
 
 /**
  * Checks whether a value can be passed directly as a Fetch request body.
@@ -146,7 +130,10 @@ export default class FetchBridgeWireTransport<
             case HTTPMethod.OPTIONS:
             case HTTPMethod.DELETE: {
                 const query =
-                    data && !Array.isArray(data) && !isFetchBody(data)
+                    data &&
+                    typeof data === 'object' &&
+                    !Array.isArray(data) &&
+                    !isFetchBody(data)
                         ? {...this.#urlData.query, ...(data as Query)}
                         : this.#urlData.query;
                 const url = constructUrl({...this.#urlData, query});
