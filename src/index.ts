@@ -20,6 +20,16 @@ export default function getBridgeWireBuilder<
     return new BridgeWireBuilder();
 }
 
+export type {
+    BridgeWireTransportAbortCallback,
+    BridgeWireTransportCallback,
+    BridgeWireTransportSettledCallback,
+    ErrorCallback,
+    Query,
+    RequestId,
+    RequestOptions,
+    UnsubscribeMethod,
+} from './types';
 export {
     FetchCache,
     FetchCredentials,
@@ -31,15 +41,4 @@ export {
     RequestStatus,
     TransportStatus,
     TransportType,
-} from './types';
-
-export type {
-    BridgeWireTransportAbortCallback,
-    BridgeWireTransportCallback,
-    BridgeWireTransportSettledCallback,
-    ErrorCallback,
-    Query,
-    RequestId,
-    RequestOptions,
-    UnsubscribeMethod,
 } from './types';

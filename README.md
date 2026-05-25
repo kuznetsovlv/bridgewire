@@ -204,7 +204,7 @@ When `PayloadDataType.JSON` is used, incoming messages are parsed with `JSON.par
 The main entry point is:
 
 ```ts
-getBridgeWireBuilder<RequestData, ResponseData>()
+getBridgeWireBuilder<RequestData, ResponseData>();
 ```
 
 The builder supports fluent configuration:
@@ -216,7 +216,7 @@ const transport = getBridgeWireBuilder<RequestData, ResponseData>()
     .withHost('api.example.com')
     .withPort(443)
     .withPath('/api')
-    .withQuery({ page: '1' })
+    .withQuery({page: '1'})
     .withHash('top')
     .withMethod(HTTPMethod.GET)
     .withHeader('Accept', 'application/json')
@@ -294,11 +294,11 @@ For WebSocket, `PayloadDataType.JSON` parses incoming messages with `JSON.parse`
 Requests can have the following statuses:
 
 ```ts
-RequestStatus.Pending
-RequestStatus.Completed
-RequestStatus.Failed
-RequestStatus.Aborted
-RequestStatus.TimedOut
+RequestStatus.Pending;
+RequestStatus.Completed;
+RequestStatus.Failed;
+RequestStatus.Aborted;
+RequestStatus.TimedOut;
 ```
 
 A request is considered settled when it reaches one of these terminal states:
@@ -313,11 +313,11 @@ A request is considered settled when it reaches one of these terminal states:
 Transports can have the following statuses:
 
 ```ts
-TransportStatus.Disconnected
-TransportStatus.Connecting
-TransportStatus.Connected
-TransportStatus.Closing
-TransportStatus.Error
+TransportStatus.Disconnected;
+TransportStatus.Connecting;
+TransportStatus.Connected;
+TransportStatus.Closing;
+TransportStatus.Error;
 ```
 
 ## Subscriptions
