@@ -91,13 +91,13 @@ describe('WebSocketRequest', () => {
         expect(request.settled).toBe(false);
     });
 
-    it('uses Pending status for closing socket', () => {
+    it('uses Failed status for closing socket', () => {
         const socket = createSocket(WebSocket.CLOSING);
 
         const request = new WebSocketRequest<string>('request-1', {socket});
 
-        expect(request.status).toBe(RequestStatus.Pending);
-        expect(request.settled).toBe(false);
+        expect(request.status).toBe(RequestStatus.Failed);
+        expect(request.settled).toBe(true);
     });
 
     it('uses Failed status for closed socket', () => {

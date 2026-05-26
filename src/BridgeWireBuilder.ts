@@ -1,5 +1,8 @@
 import type {BridgeWireTransport} from '@/BridgeWireTransport';
-import {FetchBridgeWireTransport} from '@/BridgeWireTransport';
+import {
+    FetchBridgeWireTransport,
+    WebSocketBridgeWireTransport,
+} from '@/BridgeWireTransport';
 import {parseUrl} from '@/utils';
 
 import type {
@@ -24,9 +27,9 @@ import {
 /**
  * Fluent configuration builder for BridgeWire transports.
  *
- * The builder stores transport, URL, payload, Fetch and request defaults step by
- * step. Each `with*` method mutates the builder state and returns the same
- * builder instance, allowing chained configuration.
+ * The builder stores transport, URL, payload, Fetch, WebSocket and request
+ * defaults step by step. Each `with*` method mutates the builder state and
+ * returns the same builder instance, allowing chained configuration.
  *
  * Current responsibilities:
  * - collect transport configuration
@@ -34,10 +37,9 @@ import {
  * - validate transport/protocol/payload data type compatibility
  * - collect Fetch-specific defaults: method, headers, referrer, mode,
  *   credentials, cache, redirect, integrity and keepalive
+ * - collect WebSocket-specific defaults: soap and wamp subprotocol flags
  * - collect request defaults such as timeout
- * - build a Fetch-based BridgeWire transport
- *
- * WebSocket transport build support is not implemented yet.
+ * - build a Fetch-based or WebSocket-based BridgeWire transport
  *
  * @template RequestData - Data type accepted by the created transport.
  * @template ResponseData - Data type emitted by requests created by the transport.
@@ -69,9 +71,13 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
     #redirect?: FetchRedirect;
     #integrity?: string;
     #keepalive: boolean;
+    #soap: boolean;
+    #wamp: boolean;
 
     constructor() {
         this.#keepalive = false;
+        this.#soap = false;
+        this.#wamp = false;
     }
 
     /**
@@ -95,10 +101,11 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
     }
 
     /**
-     * Returns the selected transport type or infers it from the default protocol.
+     * Returns the selected transport type or infers it from the configured protocol.
      *
-     * HTTP / HTTPS defaults to Fetch transport. WS / WSS defaults to WebSocket
-     * transport.
+     * HTTP / HTTPS resolves to Fetch transport. WS / WSS resolves to WebSocket
+     * transport. When neither transport nor protocol is configured, the runtime
+     * default protocol is used.
      *
      * @returns Selected or inferred transport type.
      */
@@ -107,7 +114,7 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
             return this.#transport;
         }
 
-        switch ((this.#protocol = getDefaultProtocol())) {
+        switch (this.#protocol ?? getDefaultProtocol()) {
             case Protocol.HTTP:
             case Protocol.HTTPS:
                 return TransportType.FETCH;
@@ -510,44 +517,81 @@ export default class BridgeWireBuilder<RequestData, ResponseData> {
     }
 
     /**
-     * Builds a configured BridgeWire transport instance.
+     * Enables or disables the `soap` WebSocket subprotocol.
      *
-     * Currently supports Fetch transport builds. WebSocket transport build support
-     * is not implemented yet.
+     * Calling this method without arguments enables the subprotocol.
+     *
+     * @param soap - Whether to request the `soap` WebSocket subprotocol.
+     * @returns Current builder instance.
+     */
+    public withSoap(
+        soap: boolean = true
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#soap = soap;
+        return this;
+    }
+
+    /**
+     * Enables or disables the `wamp` WebSocket subprotocol.
+     *
+     * Calling this method without arguments enables the subprotocol.
+     *
+     * @param wamp - Whether to request the `wamp` WebSocket subprotocol.
+     * @returns Current builder instance.
+     */
+    public withWamp(
+        wamp: boolean = true
+    ): BridgeWireBuilder<RequestData, ResponseData> {
+        this.#wamp = wamp;
+        return this;
+    }
+
+    /**
+     * Builds a configured BridgeWire transport instance.
      *
      * During build, the builder resolves URL defaults, infers or uses the selected
      * transport type, normalizes timeout, applies request defaults, and creates a
-     * concrete transport implementation.
+     * concrete Fetch or WebSocket transport implementation.
      *
      * @returns Configured BridgeWire transport instance.
      *
-     * @throws Error when the selected or inferred transport is not supported yet.
+     * @throws Error when the selected or inferred transport is not supported.
      */
     public build(): BridgeWireTransport<RequestData, ResponseData> {
         const urlData = this.#getURLData();
         const transport = this.#getTransportType();
         const timeout = this.#getTimeout();
 
-        if (transport === TransportType.FETCH) {
-            const method = this.#getMethod();
+        switch (transport) {
+            case TransportType.FETCH: {
+                const method = this.#getMethod();
 
-            return new FetchBridgeWireTransport<RequestData, ResponseData>({
-                urlData,
-                method,
-                timeout,
-                headers: this.#headers ?? {},
-                referrer: this.#referrer,
-                referrerPolicy: this.#referrerPolicy,
-                mode: this.#mode,
-                credentials: this.#credentials,
-                cache: this.#cache,
-                redirect: this.#redirect,
-                integrity: this.#integrity,
-                keepalive: this.#keepalive,
-                dataType: this.#dataType,
-            });
+                return new FetchBridgeWireTransport<RequestData, ResponseData>({
+                    urlData,
+                    method,
+                    timeout,
+                    headers: this.#headers ?? {},
+                    referrer: this.#referrer,
+                    referrerPolicy: this.#referrerPolicy,
+                    mode: this.#mode,
+                    credentials: this.#credentials,
+                    cache: this.#cache,
+                    redirect: this.#redirect,
+                    integrity: this.#integrity,
+                    keepalive: this.#keepalive,
+                    dataType: this.#dataType,
+                });
+            }
+            case TransportType.WEBSOCKET:
+                return new WebSocketBridgeWireTransport({
+                    urlData,
+                    timeout,
+                    dataType: this.#dataType,
+                    soap: this.#soap,
+                    wamp: this.#wamp,
+                });
+            default:
+                throw new Error(`Unsupported transport "${transport}".`);
         }
-
-        throw new Error(`Unsupported transport "${transport}".`);
     }
 }

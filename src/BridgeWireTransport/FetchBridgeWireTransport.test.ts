@@ -666,3 +666,116 @@ describe('FetchBridgeWireTransport', () => {
         expect(onAbort).toHaveBeenCalledWith(request?.id);
     });
 });
+
+describe('isFetchBody', () => {
+    it('does not merge URLSearchParams data into query for GET', () => {
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockReturnValue(new Promise(() => {}));
+
+        const data = new URLSearchParams({
+            page: '1',
+        });
+
+        const transport = new FetchBridgeWireTransport<
+            URLSearchParams,
+            unknown
+        >({
+            urlData: {
+                ...urlData,
+                query: {
+                    existing: 'yes',
+                },
+            },
+            method: HTTPMethod.GET,
+        });
+
+        transport.send(data);
+
+        const [url, init] = fetchMock.mock.calls[0];
+
+        expect((url as URL).toString()).toBe(
+            'https://example.com/api/users?existing=yes'
+        );
+        expect(init?.body).toBeUndefined();
+    });
+
+    it('does not merge Blob data into query for GET', () => {
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockReturnValue(new Promise(() => {}));
+
+        const data = new Blob(['hello']);
+
+        const transport = new FetchBridgeWireTransport<Blob, unknown>({
+            urlData: {
+                ...urlData,
+                query: {
+                    existing: 'yes',
+                },
+            },
+            method: HTTPMethod.GET,
+        });
+
+        transport.send(data);
+
+        const [url, init] = fetchMock.mock.calls[0];
+
+        expect((url as URL).toString()).toBe(
+            'https://example.com/api/users?existing=yes'
+        );
+        expect(init?.body).toBeUndefined();
+    });
+
+    it('does not merge ArrayBufferView data into query for GET', () => {
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockReturnValue(new Promise(() => {}));
+
+        const data = new Uint8Array([1, 2, 3]);
+
+        const transport = new FetchBridgeWireTransport<Uint8Array, unknown>({
+            urlData: {
+                ...urlData,
+                query: {
+                    existing: 'yes',
+                },
+            },
+            method: HTTPMethod.GET,
+        });
+
+        transport.send(data);
+
+        const [url, init] = fetchMock.mock.calls[0];
+
+        expect((url as URL).toString()).toBe(
+            'https://example.com/api/users?existing=yes'
+        );
+        expect(init?.body).toBeUndefined();
+    });
+
+    it('does not merge primitive non-string data into query for GET', () => {
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockReturnValue(new Promise(() => {}));
+
+        const transport = new FetchBridgeWireTransport<number, unknown>({
+            urlData: {
+                ...urlData,
+                query: {
+                    existing: 'yes',
+                },
+            },
+            method: HTTPMethod.GET,
+        });
+
+        transport.send(42);
+
+        const [url, init] = fetchMock.mock.calls[0];
+
+        expect((url as URL).toString()).toBe(
+            'https://example.com/api/users?existing=yes'
+        );
+        expect(init?.body).toBeUndefined();
+    });
+});
