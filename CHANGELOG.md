@@ -1,5 +1,11 @@
 # bridgewire
 
+## 2.0.1
+
+### Patch Changes
+
+- 2de41f6: Updated package metadata and author information.
+
 ## 2.0.0
 
 ### Major Changes
