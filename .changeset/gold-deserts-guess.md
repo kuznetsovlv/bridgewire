@@ -1,5 +1,5 @@
 ---
-'bridgewire': patch
+"bridgewire": patch
 ---
 
-Added credentials
+Updated package metadata and author information.
