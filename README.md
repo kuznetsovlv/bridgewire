@@ -565,3 +565,7 @@ Important areas to review before publishing:
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).
+
+## Author
+
+Created by [Leonid Kuznetsov](https://www.linkedin.com/in/leonid-kuznetsov-651a50126/)
