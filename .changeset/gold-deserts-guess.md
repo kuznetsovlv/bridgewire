@@ -1,0 +1,5 @@
+---
+'bridgewire': patch
+---
+
+Added credentials

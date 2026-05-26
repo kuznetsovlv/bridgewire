@@ -3,7 +3,16 @@
     "version": "2.0.0",
     "description": "Transport-agnostic client for HTTP and WebSocket communication",
     "keywords": [],
-    "author": "Kuznetsov Leonid",
+    "author": "Kuznetsov Leonid (https://www.linkedin.com/in/leonid-kuznetsov-651a50126/)",
+    "linkedIn": "https://www.linkedin.com/in/leonid-kuznetsov-651a50126/",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kuznetsovlv/bridgewire.git"
+    },
+    "bugs": {
+        "url": "https://github.com/kuznetsovlv/bridgewire/issues"
+    },
+    "homepage": "https://github.com/kuznetsovlv/bridgewire#readme",
     "license": "MIT",
     "type": "module",
     "main": "./dist/bridgewire.cjs",
@@ -19,14 +28,6 @@
     "files": [
         "dist"
     ],
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/kuznetsovlv/bridgewire.git"
-    },
-    "bugs": {
-        "url": "https://github.com/kuznetsovlv/bridgewire/issues"
-    },
-    "homepage": "https://github.com/kuznetsovlv/bridgewire#readme",
     "scripts": {
         "dev": "vite",
         "prebuild": "npm run clean",
