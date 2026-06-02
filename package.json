@@ -2,8 +2,20 @@
     "name": "bridgewire",
     "version": "2.0.1",
     "description": "Transport-agnostic client for HTTP and WebSocket communication",
-    "keywords": [],
-    "author": "Kuznetsov Leonid (https://www.linkedin.com/in/leonid-kuznetsov-651a50126/)",
+    "keywords": [
+        "typescript",
+        "fetch",
+        "websocket",
+        "http",
+        "http-client",
+        "api-client",
+        "transport-agnostic",
+        "request-client",
+        "builder-api",
+        "lifecycle-events",
+        "timeout"
+    ],
+    "author": "Leonid kuznetsov (https://www.linkedin.com/in/leonid-kuznetsov-651a50126/)",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/kuznetsovlv/bridgewire.git"
