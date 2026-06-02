@@ -1,5 +1,11 @@
 # bridgewire
 
+## 2.0.2
+
+### Patch Changes
+
+- 04f789d: Updated package metadata.
+
 ## 2.0.1
 
 ### Patch Changes
