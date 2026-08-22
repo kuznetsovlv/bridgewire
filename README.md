@@ -1,4 +1,20 @@
-# BridgeWire
+<p align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="./logo/logo_dark.png"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="./logo/logo_light.png"
+    />
+    <img
+      src="./logo/logo_light.png"
+      alt="bridgewire"
+      width="760"
+    />
+  </picture>
+</p>
 
 Transport-agnostic client for HTTP and WebSocket communication.
 
@@ -6,23 +22,18 @@ BridgeWire provides a fluent builder API for creating typed transports over `fet
 
 [Coverage report](https://kuznetsovlv.github.io/bridgewire/)
 
-## Status
-
-BridgeWire is under active development.
-
-Current support:
-
-- Fetch-based transport
-- WebSocket-based transport
-- Typed request and response data
-- Request lifecycle statuses
-- Transport-level subscriptions
-- Request-level message, error, abort, and settled events
-- Timeout handling
-- Content-type based default fetch response parser
-- Explicit payload parser selection through `PayloadDataType`
-- GitHub Actions CI
-- HTML coverage report via GitHub Pages
+<p align="center">
+  <picture>
+    <source
+      srcset="./logo/spider.png"
+    />
+    <img
+      src="./logo/spider.png"
+      alt="Bridgewire mascot"
+      width="320"
+    />
+  </picture>
+</p>
 
 ## Installation
 
